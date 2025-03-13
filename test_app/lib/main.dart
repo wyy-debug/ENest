@@ -4,18 +4,45 @@ import 'routes/app_routes.dart';
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sessionToken = prefs.getString('session_token');
+    final userData = prefs.getString('user_data');
+
+    if (sessionToken != null && userData != null) {
+      // 如果存在有效的登录信息，导航到主页
+      AppRoutes.goToHome(navigatorKey.currentContext!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter自习室',
+      navigatorKey: navigatorKey,
+      title: 'E - StudyRoom',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -28,8 +55,8 @@ class MyApp extends StatelessWidget {
           bodyLarge: TextStyle(fontSize: 16),
         ),
       ),
+      initialRoute: AppRoutes.login,
       routes: AppRoutes.routes,
-      home: const HomePage(),
     );
   }
 }
@@ -43,6 +70,36 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _showHoneycomb = false;
+  String? _username;
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userData = prefs.getString('user_data');
+    if (userData != null) {
+      final user = jsonDecode(userData);
+      setState(() {
+        _username = user['username'];
+        _isLoggedIn = true;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+    await prefs.remove('session_token');
+    setState(() {
+      _username = null;
+      _isLoggedIn = false;
+    });
+  }
 
   void _onTypingFinished() {
     setState(() {
@@ -68,18 +125,26 @@ class _HomePageState extends State<HomePage> {
             child: const Text('API'),
           ),
           const SizedBox(width: 16),
-          TextButton(
-            onPressed: () {
-              AppRoutes.navigateToLogin(context);
-            },
-            child: const Text('Log in'),
-          ),
+          if (_isLoggedIn) ...[            
+            Text(_username ?? '', style: const TextStyle(color: Colors.black54)),
+            const SizedBox(width: 16),
+            TextButton(
+              onPressed: _handleLogout,
+              child: const Text('Logout'),
+            ),
+          ] else
+            TextButton(
+              onPressed: () {
+                AppRoutes.navigateToLogin(context);
+              },
+              child: const Text('Log in'),
+            ),
           const SizedBox(width: 40),
         ],
       ),
       body: Stack(
         children: [
-          if (_showHoneycomb) HoneycombBackground(show: _showHoneycomb),
+          //if (_showHoneycomb) HoneycombBackground(show: _showHoneycomb),
           SingleChildScrollView(
             child: Column(
               children: [
@@ -220,149 +285,135 @@ class _TypewriterTextState extends State<TypewriterText> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform(
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.001)
-            ..rotateX(_rotateAnimation.value),
-          alignment: Alignment.center,
-          child: Opacity(
-            opacity: _fadeAnimation.value,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: _displayText),
-                  if (!_typingFinished && _showCursor)
-                    TextSpan(
-                      text: '|',
-                      style: widget.style?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                ],
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: _displayText),
+          if (!_typingFinished && _showCursor)
+            TextSpan(
+              text: '|',
+              style: widget.style?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
               ),
-              style: widget.style,
-              textAlign: widget.textAlign,
             ),
-          ),
-        );
-      },
+        ],
+      ),
+      style: widget.style,
+      textAlign: widget.textAlign,
     );
   }
 }
 
 
-class HoneycombBackground extends StatefulWidget {
-  final bool show;
-  const HoneycombBackground({super.key, required this.show});
+// class HoneycombBackground extends StatefulWidget {
+//   final bool show;
+//   const HoneycombBackground({super.key, required this.show});
 
-  @override
-  State<HoneycombBackground> createState() => _HoneycombBackgroundState();
-}
+//   @override
+//   State<HoneycombBackground> createState() => _HoneycombBackgroundState();
+// }
 
-class _HoneycombBackgroundState extends State<HoneycombBackground> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  ui.FragmentShader? _shader;
-  double _time = 0.0;
-  bool _isLoading = true;
-  String? _error;
+// class _HoneycombBackgroundState extends State<HoneycombBackground> with SingleTickerProviderStateMixin {
+//   late AnimationController _controller;
+//   ui.FragmentShader? _shader;
+//   double _time = 0.0;
+//   bool _isLoading = true;
+//   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat();
+//   @override
+//   void initState() {
+//     super.initState();
+//     _controller = AnimationController(
+//       vsync: this,
+//       duration: const Duration(seconds: 1),
+//     )..repeat();
 
-    _loadShader();
-    if (widget.show) {
-      _controller.forward();
-    }
-  }
+//     _loadShader();
+//     if (widget.show) {
+//       _controller.forward();
+//     }
+//   }
 
-  Future<void> _loadShader() async {
-    try {
-      final program = await ui.FragmentProgram.fromAsset('assets/shaders/honeycomb.frag');
-      if (mounted) {
-        setState(() {
-          _shader = program.fragmentShader();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-      debugPrint('Error loading shader: $e');
-    }
-  }
+//   Future<void> _loadShader() async {
+//     try {
+//       final program = await ui.FragmentProgram.fromAsset('assets/shaders/honeycomb.frag');
+//       if (mounted) {
+//         setState(() {
+//           _shader = program.fragmentShader();
+//           _isLoading = false;
+//         });
+//       }
+//     } catch (e) {
+//       if (mounted) {
+//         setState(() {
+//           _error = e.toString();
+//           _isLoading = false;
+//         });
+//       }
+//       debugPrint('Error loading shader: $e');
+//     }
+//   }
 
-  @override
-  void didUpdateWidget(HoneycombBackground oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.show && !oldWidget.show) {
-      _controller.forward();
-    }
-  }
+//   @override
+//   void didUpdateWidget(HoneycombBackground oldWidget) {
+//     super.didUpdateWidget(oldWidget);
+//     if (widget.show && !oldWidget.show) {
+//       _controller.forward();
+//     }
+//   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     _controller.dispose();
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+//   @override
+//   Widget build(BuildContext context) {
+//     if (_isLoading) {
+//       return const Center(child: CircularProgressIndicator());
+//     }
 
-    if (_error != null || _shader == null) {
-      return const SizedBox.expand();
-    }
+//     if (_error != null || _shader == null) {
+//       return const SizedBox.expand();
+//     }
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        _time += 0.016;
-        return CustomPaint(
-          painter: HoneycombShaderPainter(_shader!, _time),
-          size: Size.infinite,
-        );
-      },
-    );
-  }
-}
+//     return AnimatedBuilder(
+//       animation: _controller,
+//       builder: (context, child) {
+//         _time += 0.016;
+//         return CustomPaint(
+//           painter: HoneycombShaderPainter(_shader!, _time),
+//           size: Size.infinite,
+//         );
+//       },
+//     );
+//   }
+// }
 
-class HoneycombShaderPainter extends CustomPainter {
-  final ui.FragmentShader shader;
-  final double time;
+// class HoneycombShaderPainter extends CustomPainter {
+//   final ui.FragmentShader shader;
+//   final double time;
 
-  HoneycombShaderPainter(this.shader, this.time);
+//   HoneycombShaderPainter(this.shader, this.time);
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    shader.setFloat(0, time);
-    shader.setFloat(1, size.width);
-    shader.setFloat(2, size.height);
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     shader.setFloat(0, time);
+//     shader.setFloat(1, size.width);
+//     shader.setFloat(2, size.height);
 
-    final paint = Paint()
-      ..shader = shader;
+//     final paint = Paint()
+//       ..shader = shader;
 
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      paint,
-    );
-  }
+//     canvas.drawRect(
+//       Rect.fromLTWH(0, 0, size.width, size.height),
+//       paint,
+//     );
+//   }
 
-  @override
-  bool shouldRepaint(covariant HoneycombShaderPainter oldDelegate) {
-    return oldDelegate.time != time;
-  }
-}
+//   @override
+//   bool shouldRepaint(covariant HoneycombShaderPainter oldDelegate) {
+//     return oldDelegate.time != time;
+//   }
+// }

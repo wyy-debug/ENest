@@ -1,16 +1,39 @@
 import 'package:flutter/material.dart';
 import '../routes/app_routes.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../config/app_config.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
-    @override
-    State<LoginPage> createState() => _LoginPageState();
+  @override
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  // 检查登录状态
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sessionToken = prefs.getString('session_token');
+    final userData = prefs.getString('user_data');
+
+    if (sessionToken != null && userData != null) {
+      if (mounted) {
+        AppRoutes.goToHome(context);
+      }
+    }
+  }
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isPasswordVisible = false;
@@ -20,27 +43,92 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
-
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement login logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Login...')),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse(AppConfig.loginEndpoint),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'username': _usernameController.text,
+            'password': _passwordController.text,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          // 保存用户信息和token到本地存储
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_data', jsonEncode(data['user']));
+          await prefs.setString('session_token', response.headers['set-cookie'] ?? '');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('登录成功')),
+            );
+            // 导航到主页
+            AppRoutes.goToHome(context);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('登录失败: ${jsonDecode(response.body)['error']}')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('登录失败: $e')),
+          );
+        }
+      }
     }
   }
 
-  void _handleRegister() {
+  void _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement registration logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Processing Registration...')),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse(AppConfig.registerEndpoint),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'username': _usernameController.text,
+            'email': _emailController.text,
+            'password': _passwordController.text,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('注册成功，请登录')),
+            );
+            // 切换到登录模式
+            setState(() {
+              _isLogin = true;
+            });
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('注册失败: ${jsonDecode(response.body)['error']}')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('注册失败: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -54,6 +142,15 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  void _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+    await prefs.remove('session_token');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,6 +162,12 @@ class _LoginPageState extends State<LoginPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => AppRoutes.goBack(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -80,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Logo
                   Center(
                     child: Text(
-                      'OpenAI',
+                      'E - StudyRoom',
                       style: Theme.of(context).textTheme.displayLarge!.copyWith(
                             color: Theme.of(context).colorScheme.primary,
                           ),
@@ -95,20 +198,37 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Email Field
+                  // Email Field (Only for Register)
+                  if (!_isLogin) ...[                    
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        labelText: '邮箱',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '请输入邮箱';
+                        }
+                        if (!value.contains('@')) {
+                          return '请输入有效的邮箱地址';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  // Username Field
                   TextFormField(
-                    controller: _emailController,
+                    controller: _usernameController,
                     decoration: const InputDecoration(
-                      labelText: '邮箱',
+                      labelText: '用户名',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return '请输入邮箱';
-                      }
-                      if (!value.contains('@')) {
-                        return '请输入有效的邮箱地址';
+                        return '请输入用户名';
                       }
                       return null;
                     },

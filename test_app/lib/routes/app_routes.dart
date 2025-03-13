@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../pages/api_page.dart';
 import '../pages/login_page.dart';
+import '../pages/home_page.dart';
 
 class AppRoutes {
   // 路由名称常量
@@ -10,6 +11,7 @@ class AppRoutes {
 
     // 路由配置表
     static Map<String, WidgetBuilder> routes = {
+        home: (context) => const HomePage(),
         api: (context) => const ApiPage(),
         login: (context) => const LoginPage(),
     };
@@ -21,6 +23,10 @@ class AppRoutes {
 
     static void navigateToLogin(BuildContext context) {
         Navigator.pushNamed(context, login);
+    }
+
+    static void goToHome(BuildContext context) {
+        Navigator.pushReplacementNamed(context, home);
     }
 
   // 返回上一页

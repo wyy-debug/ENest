@@ -16,12 +16,21 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _checkLoginStatus();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
     final userData = prefs.getString('user_data');
+    final sessionToken = prefs.getString('session_token');
+
+    if (userData == null || sessionToken == null) {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+    }
+
     if (userData != null) {
       final user = jsonDecode(userData);
       setState(() {
@@ -91,6 +100,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _handleLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+    await prefs.remove('session_token');
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,6 +131,19 @@ class _HomePageState extends State<HomePage> {
             ),
             useIndicator: true,
             indicatorColor: _destinationColors[_selectedIndex].withOpacity(0.2),
+            trailing: _username != null
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: TextButton.icon(
+                      onPressed: _handleLogout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text('登出'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  )
+                : null,
           ),
           const VerticalDivider(thickness: 1, width: 1),
           Expanded(

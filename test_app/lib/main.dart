@@ -7,8 +7,6 @@ import 'dart:ui' as ui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
 void main() {
   runApp(const MyApp());
 }
@@ -34,14 +32,14 @@ class _MyAppState extends State<MyApp> {
 
     if (sessionToken != null && userData != null) {
       // 如果存在有效的登录信息，导航到主页
-      AppRoutes.goToHome(navigatorKey.currentContext!);
+      // AppRoutes.goToHome(navigatorKey.currentContext!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
+      //navigatorKey: navigatorKey,
       title: 'E - StudyRoom',
       theme: ThemeData(
         useMaterial3: true,
@@ -55,8 +53,8 @@ class _MyAppState extends State<MyApp> {
           bodyLarge: TextStyle(fontSize: 16),
         ),
       ),
-      initialRoute: AppRoutes.login,
       routes: AppRoutes.routes,
+      home: const HomePage(),
     );
   }
 }

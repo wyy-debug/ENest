@@ -142,33 +142,18 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  void _handleLogout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_data');
-    await prefs.remove('session_token');
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => AppRoutes.goBack(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.white,
+      //   elevation: 0,
+      //   leading: IconButton(
+      //     icon: const Icon(Icons.arrow_back),
+      //     onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+      //   ),
+      // ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'study_room_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -70,6 +71,9 @@ class _HomePageState extends State<HomePage> {
   ];
 
   Widget _buildContent() {
+    if (_selectedIndex == 2) {
+      return const StudyRoomPage();
+    }
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

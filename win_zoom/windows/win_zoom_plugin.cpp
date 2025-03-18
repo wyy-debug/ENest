@@ -10,7 +10,7 @@
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
-
+#include "include/win_zoom/MainZoom.h"
 #include <memory>
 #include <sstream>
 
@@ -33,65 +33,26 @@ void WinZoomPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows *regis
   registrar->AddPlugin(std::move(plugin));
 }
 
-WinZoomPlugin::WinZoomPlugin() {}
-
-WinZoomPlugin::~WinZoomPlugin() 
-{
-    UninitVideoSDK();
-}
-
-void WinZoomPlugin::InitVideoSDK()
-{
-    ZoomVideoSDKInitParams init_params;
-    init_params.domain = _T("https://go.zoom.us");
-    init_params.enableLog = true;
-    init_params.logFilePrefix = _T("zoom_win_video_demo");
-    init_params.videoRawDataMemoryMode = ZoomVideoSDKRawDataMemoryModeHeap;
-    init_params.shareRawDataMemoryMode = ZoomVideoSDKRawDataMemoryModeHeap;
-    init_params.audioRawDataMemoryMode = ZoomVideoSDKRawDataMemoryModeHeap;
-    init_params.enableIndirectRawdata = false;
-
-    //ZoomVideoSDKMgr::GetInst().Init(this, init_params);
-}
-
-void WinZoomPlugin::UninitVideoSDK()
-{
-  //ZoomVideoSDKMgr::GetInst().UnInit();
+WinZoomPlugin::WinZoomPlugin() {
 }
 
 void WinZoomPlugin::initSDK(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result){
+  MainZoom zoom = MainZoom::GetInstance();
+  zoom.InitVideoSDK();
+  zoom.JoinSession();
+  result->Error("aaa","aaa");
 }
 
 void WinZoomPlugin::joinSession(const flutter::MethodCall<flutter::EncodableValue> &method_call, std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  MainZoom zoom = MainZoom::GetInstance();
+  zoom.JoinSession();
+  result->Success();
 }
+
+WinZoomPlugin::~WinZoomPlugin() {}
+
 
 void WinZoomPlugin::leaveSession(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-}
-
-void WinZoomPlugin::JoinSession()
-{
-  // test code
-  //  ZoomVideoSDKSessionContext sessionContext;
-  //  sessionContext.sessionName = L"Session name";
-  //  sessionContext.sessionPassword = L"Session password";
-  //  sessionContext.userName = L"User name";
-//
-  //  sessionContext.token = L"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfa2V5IjoiSEppSnRJMjAwWEIxcDRhQ3NKV1h5Y1VzNWJMZDR4Q0NjYW9TIiwicm9sZV90eXBlIjoxLCJ0cGMiOiJURVNUIiwiaWF0IjoxNzQyMjc4Mzk2LCJleHAiOjE3NDIyODE5OTZ9.uDcFy8o4SsqTowoVbUcxqpa7MVa-QsTON8_b7stGAx0";
-  //  sessionContext.videoOption.localVideoOn = true;
-  //  sessionContext.audioOption.connect = true;
-  //  sessionContext.audioOption.mute = false;
-//
-  //  IZoomVideoSDKSession* pSession = ZoomVideoSDKMgr::GetInst().JoinSession(sessionContext);
-  //  IZoomVideoSDKUser* pUser;
-  //  pUser = ZoomVideoSDKMgr::GetInst().GetMySelf();
-//
-//
-  //  ZoomVideoSDKResolution resolution = ZoomVideoSDKResolution_360P;
-//
-  //  IZoomVideoSDKRawDataPipe* pPipe = NULL;
-  //  pPipe = pUser->GetVideoPipe();
-  //  if(!pPipe) return;
-
 }
 
 void WinZoomPlugin::HandleMethodCall(

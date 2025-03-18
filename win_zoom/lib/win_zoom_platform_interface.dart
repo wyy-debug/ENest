@@ -27,7 +27,7 @@ abstract class WinZoomPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<bool> initSDK() {
+  Future<String?> initSDK() {
     throw UnimplementedError('initSDK() has not been implemented.');
   }
 

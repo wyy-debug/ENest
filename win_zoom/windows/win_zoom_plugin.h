@@ -27,9 +27,6 @@ namespace win_zoom {
 
     public:
         // Logic code
-        void InitVideoSDK();
-        void UninitVideoSDK();
-        void JoinSession();
         void initSDK(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
         void joinSession(const flutter::MethodCall<flutter::EncodableValue> &method_call, std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
         void leaveSession(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);

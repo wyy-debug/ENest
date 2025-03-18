@@ -30,7 +30,7 @@ bool ZoomVideoSDKMgr::Init(IZoomVideoSDKDelegate* listener, ZoomVideoSDKInitPara
             if (ZoomVideoSDKErrors_Success == err)
             {
                 is_inited_ = true;
-                video_sdk_obj_->addListener(listener);
+                //video_sdk_obj_->addListener(listener);
             }
         }
     }

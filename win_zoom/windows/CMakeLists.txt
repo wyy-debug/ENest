@@ -15,6 +15,8 @@ list(APPEND PLUGIN_SOURCES
 add_library(${PLUGIN_NAME} SHARED
   "include/win_zoom/win_zoom_plugin_c_api.h"
   "include/win_zoom/ZoomVideoSDKMgr.h"
+  "include/win_zoom/MainZoom.h"
+  "MainZoom.cpp"
   "win_zoom_plugin_c_api.cpp"
   "ZoomVideoSDKMgr.cpp"
   ${PLUGIN_SOURCES}

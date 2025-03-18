@@ -6,7 +6,7 @@ class WinZoom {
     return WinZoomPlatform.instance.getPlatformVersion();
   }
 
-  Future<bool> initSDK() {
+  Future<String?> initSDK() {
     return WinZoomPlatform.instance.initSDK();
   }
 

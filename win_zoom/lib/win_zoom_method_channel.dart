@@ -16,14 +16,9 @@ class MethodChannelWinZoom extends WinZoomPlatform {
   }
 
   @override
-  Future<bool> initSDK() async {
-    try {
-      final result = await methodChannel.invokeMethod<bool>('initSDK');
-      return result ?? false;
-    } catch (e) {
-      debugPrint('Failed to initialize Zoom SDK: $e');
-      return false;
-    }
+  Future<String?> initSDK() async {
+    final version = await methodChannel.invokeMethod<String>('initSDK');
+    return version;
   }
 
   @override

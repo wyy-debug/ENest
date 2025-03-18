@@ -21,7 +21,308 @@ USING_ZOOM_VIDEO_SDK_NAMESPACE
 
 namespace win_zoom {
 
-IZoomVideoSDK* video_sdk_ = nullptr;
+
+    ZoomVideoSDKMgr::ZoomVideoSDKMgr()
+    : video_sdk_obj_(nullptr)
+    , is_inited_(false)
+    , remote_camera_control_user(nullptr)
+    {
+
+    }
+
+    ZoomVideoSDKMgr::~ZoomVideoSDKMgr()
+    {
+      remote_camera_control_user = nullptr;
+    }
+
+    ZoomVideoSDKMgr& ZoomVideoSDKMgr::GetInst()
+    {
+      static ZoomVideoSDKMgr inst;
+      return inst;
+    }
+
+    bool ZoomVideoSDKMgr::Init(IZoomVideoSDKDelegate* listener, ZoomVideoSDKInitParams init_params)
+    {
+      if (!is_inited_)
+      {
+        video_sdk_obj_ = CreateZoomVideoSDKObj();
+
+        if (video_sdk_obj_)
+        {
+          ZoomVideoSDKErrors err = video_sdk_obj_->initialize(init_params);
+
+          if (ZoomVideoSDKErrors_Success == err)
+          {
+            is_inited_ = true;
+            video_sdk_obj_->addListener(listener);
+          }
+        }
+      }
+      return is_inited_;
+    }
+
+    void ZoomVideoSDKMgr::UnInit()
+    {
+      if (is_inited_)
+      {
+        if (video_sdk_obj_)
+        {
+          video_sdk_obj_->cleanup();
+          DestroyZoomVideoSDKObj();
+          video_sdk_obj_ = nullptr;
+        }
+        is_inited_ = false;
+      }
+    }
+
+    IZoomVideoSDKSession* ZoomVideoSDKMgr::JoinSession(ZoomVideoSDKSessionContext& session_context)
+    {
+      IZoomVideoSDKSession* session = nullptr;
+
+      if (video_sdk_obj_)
+      {
+        session = video_sdk_obj_->joinSession(session_context);
+      }
+
+      return session;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::LeaveSession(bool end)
+    {
+      if (video_sdk_obj_)
+      {
+        return video_sdk_obj_->leaveSession(end);
+      }
+
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::MuteAudio()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKAudioHelper* audio_helper = video_sdk_obj_->getAudioHelper();
+        if (audio_helper)
+        {
+          IZoomVideoSDKUser* my_self = GetMySelf();
+          if (my_self)
+          {
+            return audio_helper->muteAudio(my_self);
+          }
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::UnmuteAudio()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKAudioHelper* audio_helper = video_sdk_obj_->getAudioHelper();
+        if (audio_helper)
+        {
+          IZoomVideoSDKUser* my_self = GetMySelf();
+          if (my_self)
+          {
+            return audio_helper->unMuteAudio(my_self);
+          }
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::MuteVideo()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKVideoHelper* video_helper = video_sdk_obj_->getVideoHelper();
+        if (video_helper)
+        {
+          return video_helper->stopVideo();
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::UnmuteVideo()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKVideoHelper* video_helper = video_sdk_obj_->getVideoHelper();
+        if (video_helper)
+        {
+          return video_helper->startVideo();
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    bool ZoomVideoSDKMgr::IsMyselfVideoOn()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKUser* myself = GetMySelf();
+        if (myself)
+        {
+          if (!myself->GetVideoPipe())
+            return false;
+          ZoomVideoSDKVideoStatus video_status = myself->GetVideoPipe()->getVideoStatus();
+          if (video_status.isOn)
+            return true;
+          else
+            return false;
+        }
+      }
+      return false;
+    }
+
+    bool ZoomVideoSDKMgr::IsMyselfAudioMuted()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKUser* myself = GetMySelf();
+        if (myself)
+        {
+          ZoomVideoSDKAudioStatus audio_status = myself->getAudioStatus();
+          if (audio_status.isMuted)
+            return true;
+          else
+            return false;
+        }
+      }
+      return false;
+    }
+
+    bool ZoomVideoSDKMgr::SelectCamera(const zchar_t* camera_device_id)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKVideoHelper* video_helper = video_sdk_obj_->getVideoHelper();
+        if (video_helper)
+        {
+          return video_helper->selectCamera(camera_device_id);
+        }
+      }
+      return false;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::SelectSpeaker(const zchar_t* device_id, const zchar_t* device_name)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKAudioHelper* audio_helper = video_sdk_obj_->getAudioHelper();
+        if (audio_helper)
+        {
+          return audio_helper->selectSpeaker(device_id, device_name);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::SelectMic(const zchar_t* device_id, const zchar_t* device_name)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKAudioHelper* audio_helper = video_sdk_obj_->getAudioHelper();
+        if (audio_helper)
+        {
+          return audio_helper->selectMic(device_id, device_name);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::StartShareScreen(const zchar_t* monitorID, ZoomVideoSDKShareOption option)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKShareHelper* share_helper = video_sdk_obj_->getShareHelper();
+        if (share_helper)
+        {
+          return share_helper->startShareScreen(monitorID, option);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::StartShareView(HWND hwnd, ZoomVideoSDKShareOption option)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKShareHelper* share_helper = video_sdk_obj_->getShareHelper();
+        if (share_helper)
+        {
+          return share_helper->startShareView(hwnd, option);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::StopShare()
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKShareHelper* share_helper = video_sdk_obj_->getShareHelper();
+        if (share_helper)
+        {
+          return share_helper->stopShare();
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::SendCommand(IZoomVideoSDKUser* receiver, const zchar_t* strCmd)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKCmdChannel* cmd_channel = video_sdk_obj_->getCmdChannel();
+        if (cmd_channel)
+        {
+          return cmd_channel->sendCommand(receiver, strCmd);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    ZoomVideoSDKErrors ZoomVideoSDKMgr::SendChatToAll(const zchar_t* msgContent)
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKChatHelper* chat_helper = video_sdk_obj_->getChatHelper();
+        if (chat_helper)
+        {
+          return chat_helper->sendChatToAll(msgContent);
+        }
+      }
+      return ZoomVideoSDKErrors_Uninitialize;
+    }
+
+    const zchar_t* ZoomVideoSDKMgr::GetSessionName() const
+    {
+      if (video_sdk_obj_)
+      {
+        IZoomVideoSDKSession* session = video_sdk_obj_->getSessionInfo();
+        if (session)
+        {
+          return session->getSessionName();
+        }
+      }
+      return nullptr;
+    }
+
+    int ZoomVideoSDKMgr::GetUserCountInSession()
+    {
+      if (video_sdk_obj_)
+      {
+        return GetAllUsers().size();
+      }
+      return 0;
+    }
+
+
+
+
+// API
 
 void WinZoomPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar) {
   auto channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(

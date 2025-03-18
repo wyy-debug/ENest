@@ -9,6 +9,7 @@
 #include "include/helpers/zoom_video_sdk_share_helper_interface.h"
 #include "include/helpers/zoom_video_sdk_chat_helper_interface.h"
 #include "include/helpers/zoom_video_sdk_cmd_channel_interface.h"
+#include "include/zoom_video_sdk_delegate_interface.h"
 #include <memory>
 namespace win_zoom {
     
@@ -88,7 +89,7 @@ namespace win_zoom {
     };
     
 
-    class WinZoomPlugin : public flutter::Plugin {
+    class WinZoomPlugin : public flutter::Plugin, public IZoomVideoSDKDelegate {
     public:
         static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
 
@@ -105,11 +106,15 @@ namespace win_zoom {
             const flutter::MethodCall<flutter::EncodableValue> &method_call,
             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
-
+    public:
         // Logic code
+        void InitVideoSDK();
+        void UninitVideoSDK();
         void initSDK(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
         void joinSession(const flutter::MethodCall<flutter::EncodableValue> &method_call, std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
         void leaveSession(std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+    private:
+        CJoinSessionWndUI* join_session_wnd_ = nullptr;
     };
 
 }  // namespace win_zoom

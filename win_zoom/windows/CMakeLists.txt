@@ -14,7 +14,9 @@ list(APPEND PLUGIN_SOURCES
 
 add_library(${PLUGIN_NAME} SHARED
   "include/win_zoom/win_zoom_plugin_c_api.h"
+  "include/win_zoom/ZoomVideoSDKMgr.h"
   "win_zoom_plugin_c_api.cpp"
+  "ZoomVideoSDKMgr.cpp"
   ${PLUGIN_SOURCES}
 )
 
@@ -23,8 +25,9 @@ apply_standard_settings(${PLUGIN_NAME})
 set_target_properties(${PLUGIN_NAME} PROPERTIES
   CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
-target_include_directories(${PLUGIN_NAME} INTERFACE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(${PLUGIN_NAME} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(${PLUGIN_NAME} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include/helpers")
+target_include_directories(${PLUGIN_NAME} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include/zoom")
 
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin videosdk)
 

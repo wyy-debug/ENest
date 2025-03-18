@@ -6,7 +6,7 @@
 
 #ifndef _ZOOM_VIDEO_SDK_CMD_CHANNEL_INTERFACE_H_
 #define _ZOOM_VIDEO_SDK_CMD_CHANNEL_INTERFACE_H_
-#include "zoom_video_sdk_def.h"
+#include "include/zoom/zoom_video_sdk_def.h"
 
 BEGIN_ZOOM_VIDEO_SDK_NAMESPACE
 

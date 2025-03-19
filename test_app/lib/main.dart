@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:webview_all/webview_all.dart';
 
 void main() {
   runApp(const MyApp());

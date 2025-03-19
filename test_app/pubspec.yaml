@@ -16,8 +16,8 @@ dependencies:
   provider: ^6.0.0
   http: ^1.1.0
   shared_preferences: ^2.2.2
-  win_zoom:
-    path: ../win_zoom
+  webview_all: ^0.4.5  # win_zoom:
+  #   path: ../win_zoom
 
 dev_dependencies:
   flutter_test:

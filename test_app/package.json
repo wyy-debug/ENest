@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@zoom/videosdk-ui-toolkit": "^2.1.10-1"
+  }
+}

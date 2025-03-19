@@ -17,12 +17,6 @@ const routes: RouteRecordRaw[] = [
     name: 'studyRoom',
     component: () => import('../views/StudyRoomPage.vue'),
     meta: { requiresAuth: true }
-  },
-  {
-    path: '/zoom',
-    name: 'zoom',
-    component: () => import('../views/ZoomView.vue'),
-    meta: { requiresAuth: true }
   }
 ]
 

@@ -64,6 +64,12 @@ const handleSessionLeft = () => {
   overflow: hidden;
 }
 
+.webview-container {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 .title {
   color: #f97316;
   font-size: 2rem;
@@ -118,14 +124,7 @@ const handleSessionLeft = () => {
   color: #666;
 }
 
-.webview-container {
-  height: calc(100vh - 120px);
-  background: #f5f5f5;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+
 
 .placeholder {
   color: #666;

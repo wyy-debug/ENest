@@ -114,9 +114,9 @@ var sessionClosed = (() => {
 
 <style scoped>
 #sessionContainer {
-  width: 100%;
-  height: 100%;
-  min-height: 600px;
+  width: 100vw;
+  height: calc(100vh - 48px) ;
+  /* min-height: 600px; */
 }
 
 #join-flow {

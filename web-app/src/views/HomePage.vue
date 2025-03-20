@@ -15,7 +15,7 @@ const checkLoginStatus = async () => {
     const user = JSON.parse(userData)
     username.value = user.username
     isLoggedIn.value = true
-    router.push('/study-room')
+    router.push('/main')
   }
 }
 
@@ -42,7 +42,6 @@ onMounted(() => {
         <h1>E - StudyRoom</h1>
       </div>
       <div class="nav-actions">
-        <el-button @click="router.push('/api')">API</el-button>
         <template v-if="isLoggedIn">
           <span class="username">{{ username }}</span>
           <el-button @click="handleLogout">Logout</el-button>

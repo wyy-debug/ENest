@@ -44,7 +44,7 @@ const checkLoginStatus = async () => {
   const token = localStorage.getItem('session_token')
   const userData = localStorage.getItem('user_data')
   if (token && userData) {
-    router.push('/study-room')
+    router.push('/main')
   }
 }
 
@@ -84,6 +84,7 @@ const handleSubmit = async () => {
 
 const toggleMode = () => {
   isLogin.value = !isLogin.value
+  formRef.value?.resetFields()
   form.value = {
     email: '',
     username: '',
@@ -94,60 +95,69 @@ const toggleMode = () => {
 </script>
 
 <template>
+
   <div class="login-container">
-    <el-card class="login-card">
-      <h2>{{ isLogin ? '登录' : '注册' }}</h2>
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-position="top"
-      >
-        <el-form-item v-if="!isLogin" prop="email">
-            <el-input v-model="form.email" placeholder="请输入邮箱">
+    
+    <div class="left-section">
+      <div class="image-placeholder">
+        <img src="../assets/bee.png" alt="bee logo" />
+      </div>
+    </div>
+    <div class="right-section">
+      <el-card class="login-card">
+        <h2>{{ isLogin ? '登录' : '注册' }}</h2>
+        <el-form
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-position="top"
+        >
+          <el-form-item v-if="!isLogin" prop="email">
+              <el-input v-model="form.email" placeholder="请输入邮箱">
+                  <template #prefix>
+                      <el-icon><User /></el-icon>
+                  </template>
+              </el-input>
+          </el-form-item>
+
+          <el-form-item prop="username">
+              <el-input v-model="form.username" placeholder="请输入用户名">
                 <template #prefix>
-                    <el-icon><User /></el-icon>
+                  <el-icon><User /></el-icon>
                 </template>
-            </el-input>
-        </el-form-item>
+              </el-input>
+          </el-form-item>
 
-        <el-form-item prop="username">
-            <el-input v-model="form.username" placeholder="请输入用户名">
-              <template #prefix>
-                <el-icon><User /></el-icon>
-              </template>
-            </el-input>
-        </el-form-item>
+          <el-form-item prop="password">
+              <el-input  v-model="form.password" type="password" placeholder="请输入密码">
+                  <template #prefix>
+                      <el-icon><User /></el-icon>
+                  </template>
+              </el-input>
+          </el-form-item>
 
-        <el-form-item prop="password">
-            <el-input  v-model="form.password" type="password" placeholder="请输入密码">
-                <template #prefix>
-                    <el-icon><User /></el-icon>
-                </template>
-            </el-input>
-        </el-form-item>
+          <el-form-item v-if="!isLogin" prop="confirmPassword">
+              <el-input v-model="form.confirmPassword" type="password" placeholder="请确认密码">
+                  <template #prefix>
+                      <el-icon><User /></el-icon>
+                  </template>
+              </el-input>
+          </el-form-item>
 
-        <el-form-item v-if="!isLogin" prop="confirmPassword">
-            <el-input v-model="form.confirmPassword" type="password" placeholder="请确认密码">
-                <template #prefix>
-                    <el-icon><User /></el-icon>
-                </template>
-            </el-input>
-        </el-form-item>
+          <el-form-item class="submit-button">
+              <el-button type="primary" :loading="loading" @click="handleSubmit">
+                  {{ isLogin ? '登录' : '注册' }}
+              </el-button>
+          </el-form-item>
 
-        <el-form-item class="submit-button">
-            <el-button type="primary" :loading="loading" @click="handleSubmit">
-                {{ isLogin ? '登录' : '注册' }}
-            </el-button>
-        </el-form-item>
-
-        <div class="toggle-mode">
-            <el-button link @click="toggleMode">
-                {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
-            </el-button>
-        </div>
-      </el-form>
-    </el-card>
+          <div class="toggle-mode">
+              <el-button link @click="toggleMode">
+                  {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
+              </el-button>
+          </div>
+        </el-form>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -155,12 +165,12 @@ const toggleMode = () => {
 .login-container {
   height: 100vh;
   width: 100vw;
-  
+  display: flex;
   overflow: hidden;
 }
 
-.login-container {
-  height: 100vh;
+.left-section {
+  flex: 3;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -172,10 +182,41 @@ const toggleMode = () => {
   );
 }
 
+.right-section {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(
+    to bottom,
+    rgba(16, 163, 127, 0.1),
+    rgba(16, 163, 127, 0.2),
+    rgba(16, 163, 127, 0.1)
+  );
+}
+
+.image-placeholder {
+  width: 60%;
+  height: 60%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+  border-radius: 8px;
+}
+
+.image-placeholder img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+
+
 .login-card {
   width: 100%;
   max-width: 400px;
-  padding: 20px;
 }
 
 .toggle-mode {

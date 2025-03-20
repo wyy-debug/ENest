@@ -51,11 +51,30 @@ const startCursorBlink = () => {
 <style scoped>
 .typewriter-text {
   display: inline-block;
-  font-family: monospace;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 2.5rem;
+  font-weight: 600;
+  font-style: italic;
+  color: #2c3e50;
+  letter-spacing: -0.5px;
+  line-height: 1.4;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .cursor {
   color: #10A37F;
   font-weight: bold;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 </style>

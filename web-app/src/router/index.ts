@@ -13,10 +13,37 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/LoginPage.vue')
   },
   {
-    path: '/study-room',
-    name: 'studyRoom',
-    component: () => import('../views/StudyRoomPage.vue'),
-    meta: { requiresAuth: true }
+    path: '/main',
+    name: 'main',
+    component: () => import('../views/MainPage.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'study-room',
+        name: 'studyRoom',
+        component: () => import('../views/StudyRoomPage.vue')
+      },
+      {
+        path: 'create-study-room',
+        name: 'createStudyRoom',
+        component: () => import('../views/CreateStudyRoom.vue')
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('../views/ProfilePage.vue')
+      },
+      {
+        path: 'community',
+        name: 'community',
+        component: () => import('../views/CommunityPage.vue')
+      },
+      {
+        path: 'friends',
+        name: 'friends',
+        component: () => import('../views/FriendsPage.vue')
+      }
+    ]
   }
 ]
 

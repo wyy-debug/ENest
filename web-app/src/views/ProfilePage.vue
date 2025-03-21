@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from '../utils/axios'
+import { wsClient } from '../utils/websocket'
+import { MessageType, ProfileOperation, type ProfileMessage } from '../proto/message'
 
 const router = useRouter()
 const userData = ref<any>(null)
@@ -15,19 +16,35 @@ onMounted(() => {
     return
   }
   userData.value = JSON.parse(storedUserData)
+  initWebSocket()
   fetchUserProfile()
 })
 
-const fetchUserProfile = async () => {
+const initWebSocket = () => {
+  wsClient.connect('ws://localhost:8080/ws')
+  wsClient.registerHandler(MessageType.PROFILE, handleProfileResponse)
+  wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
+}
+
+const handleProfileResponse = (payload: Uint8Array) => {
+  const response = JSON.parse(new TextDecoder().decode(payload))
+  userData.value = { ...userData.value, ...response }
+  loading.value = false
+}
+
+const handleErrorResponse = (payload: Uint8Array) => {
+  const error = JSON.parse(new TextDecoder().decode(payload))
+  ElMessage.error(error.message || '获取个人信息失败')
+  loading.value = false
+}
+
+const fetchUserProfile = () => {
   loading.value = true
-  try {
-    const response = await axios.get('/profile')
-    userData.value = { ...userData.value, ...response.data }
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '获取个人信息失败')
-  } finally {
-    loading.value = false
+  const message: ProfileMessage = {
+    operation: ProfileOperation.GET
   }
+  const payload = new TextEncoder().encode(JSON.stringify(message))
+  wsClient.sendMessage(MessageType.PROFILE, payload)
 }
 </script>
 
@@ -52,6 +69,14 @@ const fetchUserProfile = async () => {
             <div class="info-item">
               <span class="label">邮箱：</span>
               <span class="value">{{ userData.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">个性签名：</span>
+              <span class="value">{{ userData.signature || '暂无' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">学习方向：</span>
+              <span class="value">{{ userData.studyDirection || '暂无' }}</span>
             </div>
           </div>
         </div>
@@ -101,7 +126,6 @@ const fetchUserProfile = async () => {
 
 .info-section {
   flex: 1;
-  padding: 20px 0;
 }
 
 .info-item {

@@ -3,7 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
-import axios from '../utils/axios'
+import { wsClient } from '../utils/websocket'
+import { MessageType } from '../proto/message'
 
 const router = useRouter()
 const formRef = ref()
@@ -24,7 +25,7 @@ const rules = {
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
     {
-      validator: (rule: any, value: string, callback: Function) => {
+      validator: (_rule: any, value: string, callback: Function) => {
         if (value !== form.value.password) {
           callback(new Error('两次输入的密码不一致'))
         } else {
@@ -38,6 +39,7 @@ const rules = {
 
 onMounted(() => {
   checkLoginStatus()
+  initWebSocket()
 })
 
 const checkLoginStatus = async () => {
@@ -48,6 +50,28 @@ const checkLoginStatus = async () => {
   }
 }
 
+const initWebSocket = () => {
+  wsClient.connect('ws://localhost:8080/ws')
+  wsClient.registerHandler(MessageType.AUTH, handleAuthResponse)
+  wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
+}
+
+const handleAuthResponse = (payload: Uint8Array) => {
+  const response = JSON.parse(new TextDecoder().decode(payload))
+  const { token, user } = response
+  localStorage.setItem('session_token', token)
+  localStorage.setItem('user_data', JSON.stringify(user))
+  ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
+  router.push('/')
+  loading.value = false
+}
+
+const handleErrorResponse = (payload: Uint8Array) => {
+  const error = JSON.parse(new TextDecoder().decode(payload))
+  ElMessage.error(error.message || '操作失败')
+  loading.value = false
+}
+
 const handleSubmit = async () => {
   if (!formRef.value) return
   
@@ -55,8 +79,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    const url = isLogin.value ? 'auth/login' : 'auth/register'
-    const requestData = isLogin.value
+    const authData = isLogin.value
       ? {
           username: form.value.username,
           password: form.value.password
@@ -67,17 +90,10 @@ const handleSubmit = async () => {
           email: form.value.email
         }
 
-    const response = await axios.post(url, requestData)
-
-    const { token, user } = response.data
-    localStorage.setItem('session_token', token)
-    localStorage.setItem('user_data', JSON.stringify(user))
-
-    ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
-    router.push('/')
+    const payload = new TextEncoder().encode(JSON.stringify(authData))
+    wsClient.sendMessage(MessageType.AUTH, payload)
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.message || '操作失败')
-  } finally {
+    ElMessage.error(error.message || '表单验证失败')
     loading.value = false
   }
 }
@@ -95,149 +111,121 @@ const toggleMode = () => {
 </script>
 
 <template>
-
   <div class="login-container">
-    
-    <div class="left-section">
-      <div class="image-placeholder">
-        <img src="../assets/bee.png" alt="bee logo" />
-      </div>
-    </div>
-    <div class="right-section">
-      <el-card class="login-card">
+    <el-card class="login-card">
+      <div class="login-header">
         <h2>{{ isLogin ? '登录' : '注册' }}</h2>
-        <el-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          label-position="top"
+      </div>
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        @submit.prevent
+      >
+        <el-form-item
+          v-if="!isLogin"
+          label="邮箱"
+          prop="email"
         >
-          <el-form-item v-if="!isLogin" prop="email">
-              <el-input v-model="form.email" placeholder="请输入邮箱">
-                  <template #prefix>
-                      <el-icon><User /></el-icon>
-                  </template>
-              </el-input>
-          </el-form-item>
+          <el-input
+            v-model="form.email"
+            placeholder="请输入邮箱"
+            :prefix-icon="User"
+          />
+        </el-form-item>
 
-          <el-form-item prop="username">
-              <el-input v-model="form.username" placeholder="请输入用户名">
-                <template #prefix>
-                  <el-icon><User /></el-icon>
-                </template>
-              </el-input>
-          </el-form-item>
+        <el-form-item
+          label="用户名"
+          prop="username"
+        >
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            :prefix-icon="User"
+          />
+        </el-form-item>
 
-          <el-form-item prop="password">
-              <el-input  v-model="form.password" type="password" placeholder="请输入密码">
-                  <template #prefix>
-                      <el-icon><User /></el-icon>
-                  </template>
-              </el-input>
-          </el-form-item>
+        <el-form-item
+          label="密码"
+          prop="password"
+        >
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="请输入密码"
+            show-password
+          />
+        </el-form-item>
 
-          <el-form-item v-if="!isLogin" prop="confirmPassword">
-              <el-input v-model="form.confirmPassword" type="password" placeholder="请确认密码">
-                  <template #prefix>
-                      <el-icon><User /></el-icon>
-                  </template>
-              </el-input>
-          </el-form-item>
+        <el-form-item
+          v-if="!isLogin"
+          label="确认密码"
+          prop="confirmPassword"
+        >
+          <el-input
+            v-model="form.confirmPassword"
+            type="password"
+            placeholder="请确认密码"
+            show-password
+          />
+        </el-form-item>
 
-          <el-form-item class="submit-button">
-              <el-button type="primary" :loading="loading" @click="handleSubmit">
-                  {{ isLogin ? '登录' : '注册' }}
-              </el-button>
-          </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="loading"
+            class="submit-button"
+            @click="handleSubmit"
+          >
+            {{ isLogin ? '登录' : '注册' }}
+          </el-button>
+        </el-form-item>
 
-          <div class="toggle-mode">
-              <el-button link @click="toggleMode">
-                  {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
-              </el-button>
-          </div>
-        </el-form>
-      </el-card>
-    </div>
+        <div class="toggle-mode">
+          <el-button
+            type="text"
+            @click="toggleMode"
+          >
+            {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
+          </el-button>
+        </div>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <style scoped>
 .login-container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  overflow: hidden;
-}
-
-.left-section {
-  flex: 3;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(
-    to bottom,
-    rgba(16, 163, 127, 0.1),
-    rgba(16, 163, 127, 0.2),
-    rgba(16, 163, 127, 0.1)
-  );
+  min-height: 100vh;
+  background-color: #f5f7fa;
 }
-
-.right-section {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  background: linear-gradient(
-    to bottom,
-    rgba(16, 163, 127, 0.1),
-    rgba(16, 163, 127, 0.2),
-    rgba(16, 163, 127, 0.1)
-  );
-}
-
-.image-placeholder {
-  width: 60%;
-  height: 60%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: transparent;
-  border-radius: 8px;
-}
-
-.image-placeholder img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-
 
 .login-card {
   width: 100%;
   max-width: 400px;
+  padding: 20px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.submit-button {
+  width: 100%;
 }
 
 .toggle-mode {
   text-align: center;
   margin-top: 16px;
-}
-
-.submit-button {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.submit-button :deep(.el-form-item__content) {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-
-.submit-button :deep(.el-button) {
-  width: 100%;
-  max-width: 100px;
 }
 </style>

@@ -1,25 +1,69 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import axios from '../utils/axios'
+import { wsClient } from '../utils/websocket'
+import { MessageType, FriendOperation, type FriendMessage } from '../proto/message'
 
-const friends = ref([])
+interface Friend {
+  id: number
+  username: string
+  avatar?: string
+  online: boolean
+}
+
+const friends = ref<Friend[]>([])
 const loading = ref(false)
 
 onMounted(() => {
+  initWebSocket()
   fetchFriends()
 })
 
-const fetchFriends = async () => {
-  loading.value = true
-  try {
-    const response = await axios.get('/friends')
-    friends.value = response.data
-  } catch (error: any) {
-    ElMessage.error(error.response?.data?.error || '获取好友列表失败')
-  } finally {
-    loading.value = false
+const initWebSocket = () => {
+  wsClient.connect('ws://localhost:8080/ws')
+  wsClient.registerHandler(MessageType.FRIEND, handleFriendResponse)
+  wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
+}
+
+const handleFriendResponse = (payload: Uint8Array) => {
+  const response = JSON.parse(new TextDecoder().decode(payload))
+  if (Array.isArray(response)) {
+    friends.value = response
   }
+  loading.value = false
+}
+
+const handleErrorResponse = (payload: Uint8Array) => {
+  const error = JSON.parse(new TextDecoder().decode(payload))
+  ElMessage.error(error.message || '操作失败')
+  loading.value = false
+}
+
+const fetchFriends = () => {
+  loading.value = true
+  const message: FriendMessage = {
+    operation: FriendOperation.GET_LIST
+  }
+  const payload = new TextEncoder().encode(JSON.stringify(message))
+  wsClient.sendMessage(MessageType.FRIEND, payload)
+}
+
+const handleAddFriend = () => {
+  const message: FriendMessage = {
+    operation: FriendOperation.SEND_REQUEST,
+    friendId: 0 // TODO: 需要添加一个对话框让用户输入好友ID
+  }
+  const payload = new TextEncoder().encode(JSON.stringify(message))
+  wsClient.sendMessage(MessageType.FRIEND, payload)
+}
+
+const handleDeleteFriend = (friendId: number) => {
+  const message: FriendMessage = {
+    operation: FriendOperation.DELETE,
+    friendId
+  }
+  const payload = new TextEncoder().encode(JSON.stringify(message))
+  wsClient.sendMessage(MessageType.FRIEND, payload)
 }
 </script>
 
@@ -27,7 +71,7 @@ const fetchFriends = async () => {
   <div class="friends-container">
     <div class="friends-header">
       <h2>好友列表</h2>
-      <el-button type="primary" size="large">
+      <el-button type="primary" size="large" @click="handleAddFriend">
         <el-icon><i-ep-plus /></el-icon>
         添加好友
       </el-button>
@@ -49,9 +93,9 @@ const fetchFriends = async () => {
             </div>
           </div>
           <div class="friend-actions">
-            <el-button type="primary" size="small">
-              <el-icon><i-ep-message /></el-icon>
-              发消息
+            <el-button type="danger" size="small" @click="handleDeleteFriend(friend.id)">
+              <el-icon><i-ep-delete /></el-icon>
+              删除好友
             </el-button>
           </div>
         </el-card>
@@ -98,7 +142,7 @@ const fetchFriends = async () => {
 
 .friend-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .friend-info {
@@ -113,7 +157,6 @@ const fetchFriends = async () => {
 
 .friend-details h3 {
   margin: 0 0 4px 0;
-  font-size: 16px;
   color: #333;
 }
 
@@ -124,12 +167,12 @@ const fetchFriends = async () => {
 }
 
 .friend-status.online {
-  color: #67c23a;
+  color: #67C23A;
 }
 
 .friend-actions {
   display: flex;
-  justify-content: flex-end;
+  gap: 8px;
   margin-top: 12px;
 }
 </style>

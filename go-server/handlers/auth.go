@@ -4,21 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"go-server/models"
+	"go-server/proto"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	protobuf "google.golang.org/protobuf/proto"
 )
-
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 // generateToken 生成随机会话令牌
 func generateToken() (string, error) {
@@ -29,109 +19,67 @@ func generateToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(bytes), nil
 }
 
-// Register 用户注册处理器
-func Register(c *fiber.Ctx) error {
-	var req RegisterRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
+// handleAuthMessage 处理认证消息
+func handleAuthMessage(conn *Connection, payload []byte) error {
+	var authMsg proto.AuthMessage
+	if err := protobuf.Unmarshal(payload, &authMsg); err != nil {
+		return err
 	}
 
-	// 创建新用户
-	user, err := models.CreateUser(req.Username, req.Email, req.Password)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"message": "User registered successfully",
-		"user": fiber.Map{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-		},
-	})
-}
-
-// Login 用户登录处理器
-func Login(c *fiber.Ctx) error {
-	var req LoginRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	// 验证用户凭据
-	user, err := models.AuthenticateUser(req.Username, req.Password)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Invalid credentials",
-		})
-	}
-
-	// 生成会话令牌
-	token, err := generateToken()
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create session",
-		})
-	}
-
-	// 创建会话
-	expiresAt := time.Now().Add(24 * time.Hour) // 会话有效期24小时
-	_, err = models.CreateSession(user.ID, token, expiresAt)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create session",
-		})
-	}
-
-	// 设置会话Cookie
-	c.Cookie(&fiber.Cookie{
-		Name:     "session_token",
-		Value:    token,
-		Expires:  expiresAt,
-		HTTPOnly: true,
-		Secure:   false, // 在生产环境中应设置为true
-		SameSite: "Lax",
-	})
-
-	return c.JSON(fiber.Map{
-		"message": "Login successful",
-		"user": fiber.Map{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-		},
-	})
-}
-
-// Logout 用户登出处理器
-func Logout(c *fiber.Ctx) error {
-	// 获取会话令牌
-	token := c.Cookies("session_token")
-	if token != "" {
-		// 删除会话
-		if err := models.DeleteSession(token); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to delete session",
-			})
+	// 根据Token和DeviceId处理认证
+	if authMsg.Token != "" {
+		// 处理登出请求
+		if err := models.DeleteSession(authMsg.Token); err != nil {
+			sendErrorMessage(conn, "Failed to delete session")
+			return err
 		}
+
+		// 清除连接信息
+		conn.userID = 0
+		conn.deviceID = ""
+		conn.crypto = nil
+
+		sendSuccessMessage(conn, "Logout successful")
+	} else {
+		// 处理登录请求
+		user, err := models.AuthenticateUser(authMsg.DeviceId, "")
+		if err != nil {
+			sendErrorMessage(conn, "Invalid credentials")
+			return err
+		}
+
+		// 生成会话令牌
+		token, err := generateToken()
+		if err != nil {
+			sendErrorMessage(conn, "Failed to create session")
+			return err
+		}
+
+		// 创建会话
+		expiresAt := time.Now().Add(24 * time.Hour)
+		_, err = models.CreateSession(user.ID, token, expiresAt)
+		if err != nil {
+			sendErrorMessage(conn, "Failed to create session")
+			return err
+		}
+
+		// 设置连接信息
+		conn.userID = user.ID
+		conn.deviceID = authMsg.DeviceId
+		conn.crypto = globalManager.crypto
+
+		// 发送登录成功响应
+		sendSuccessMessage(conn, "Login successful")
+		sendJSONMessage(conn, map[string]interface{}{
+			"token": token,
+			"user":  user,
+		})
 	}
 
-	// 清除Cookie
-	c.Cookie(&fiber.Cookie{
-		Name:     "session_token",
-		Value:    "",
-		Expires:  time.Now().Add(-time.Hour), // 设置为过期
-		HTTPOnly: true,
-	})
+	return nil
+}
 
-	return c.JSON(fiber.Map{
-		"message": "Logout successful",
-	})
+func init() {
+	// 注册认证消息处理器
+	RegisterMessageHandler(proto.MessageType_AUTH, handleAuthMessage)
 }

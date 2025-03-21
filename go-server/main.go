@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/websocket/v2"
 )
 
 func main() {
@@ -27,6 +28,9 @@ func main() {
 	app.Use(logger.New()) // 日志中间件
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
+		AllowOrigins:     "*",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
 	})) // CORS中间件
 
 	// 设置路由
@@ -39,37 +43,19 @@ func main() {
 		})
 	})
 
-	// 认证相关路由
-	auth := api.Group("/auth")
-	auth.Post("/register", handlers.Register)
-	auth.Post("/login", handlers.Login)
-	auth.Post("/logout", handlers.Logout)
-
-	// 自习室相关路由
-	room := api.Group("/room")
-	room.Post("/create", handlers.CreateStudyRoom)
-	room.Post("/join", handlers.JoinStudyRoom)
-	room.Post("/join/:shareLink", handlers.JoinStudyRoomByShareLink)
-	room.Post("/leave", handlers.LeaveStudyRoom)
-	room.Post("/destroy", handlers.DestroyStudyRoom)
-
-	// 好友系统相关路由
-	friend := api.Group("/friend")
-	friend.Post("/request", handlers.SendFriendRequest)
-	friend.Post("/handle-request", handlers.HandleFriendRequest)
-	friend.Get("/list", handlers.GetFriendList)
-	friend.Delete("/delete", handlers.DeleteFriend)
-	friend.Post("/contract/create", handlers.CreateFriendContract)
-	friend.Post("/contract/terminate", handlers.TerminateFriendContract)
-	friend.Get("/contracts", handlers.GetFriendContracts)
-
-	// WebSocket聊天路由
-	friend.Get("/ws", handlers.HandleChat)
-
-	// 个人信息相关路由
-	profile := api.Group("/profile")
-	profile.Get("/info", handlers.GetUserProfile)
-	profile.Put("/update", handlers.UpdateUserProfile)
+	// WebSocket路由
+	ws := api.Group("/ws")
+	ws.Use(func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	ws.Get("/", websocket.New(handlers.HandleWebSocket, websocket.Config{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}))
 
 	// 启动服务器
 	log.Fatal(app.Listen("0.0.0.0:3000"))

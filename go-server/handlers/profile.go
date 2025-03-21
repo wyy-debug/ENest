@@ -2,73 +2,55 @@ package handlers
 
 import (
 	"go-server/models"
+	"go-server/proto"
+	"log"
 
-	"github.com/gofiber/fiber/v2"
+	protobuf "google.golang.org/protobuf/proto"
 )
 
-type UpdateProfileRequest struct {
-	Username       string `json:"username,omitempty"`
-	Signature      string `json:"signature,omitempty"`
-	StudyDirection string `json:"study_direction,omitempty"`
+// handleProfileMessage 处理个人信息消息
+func handleProfileMessage(conn *Connection, payload []byte) error {
+	var profileMsg proto.ProfileMessage
+	if err := protobuf.Unmarshal(payload, &profileMsg); err != nil {
+		log.Printf("Unmarshal profile message error: %v", err)
+		return err
+	}
+
+	switch profileMsg.Operation {
+	case proto.ProfileMessage_UPDATE:
+		// 更新个人信息
+		updates := make(map[string]string)
+		if profileMsg.Username != "" {
+			updates["username"] = profileMsg.Username
+		}
+		if profileMsg.Signature != "" {
+			updates["signature"] = profileMsg.Signature
+		}
+		if profileMsg.StudyDirection != "" {
+			updates["study_direction"] = profileMsg.StudyDirection
+		}
+
+		err := models.UpdateUserProfile(conn.userID, updates)
+		if err != nil {
+			sendErrorMessage(conn, err.Error())
+			return err
+		}
+		sendSuccessMessage(conn, "Profile updated")
+
+	case proto.ProfileMessage_GET:
+		// 获取个人信息
+		user, err := models.GetUserByID(conn.userID)
+		if err != nil {
+			sendErrorMessage(conn, err.Error())
+			return err
+		}
+		sendJSONMessage(conn, user)
+	}
+
+	return nil
 }
 
-// UpdateUserProfile 更新用户个人信息的处理器
-func UpdateUserProfile(c *fiber.Ctx) error {
-	// 从上下文中获取用户ID
-	userID := c.Locals("user_id").(int)
-
-	// 解析请求体
-	var req UpdateProfileRequest
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid request body",
-		})
-	}
-
-	// 构建更新字段映射
-	updates := make(map[string]string)
-	if req.Username != "" {
-		updates["username"] = req.Username
-	}
-	if req.Signature != "" {
-		updates["signature"] = req.Signature
-	}
-	if req.StudyDirection != "" {
-		updates["study_direction"] = req.StudyDirection
-	}
-
-	// 更新用户信息
-	if err := models.UpdateUserProfile(userID, updates); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Profile updated successfully",
-	})
-}
-
-// GetUserProfile 获取用户个人信息的处理器
-func GetUserProfile(c *fiber.Ctx) error {
-	// 从上下文中获取用户ID
-	userID := c.Locals("user_id").(int)
-
-	// 获取用户信息
-	user, err := models.GetUserByID(userID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	// 返回用户信息
-	return c.JSON(fiber.Map{
-		"id":              user.ID,
-		"username":        user.Username,
-		"signature":       user.Signature,
-		"study_direction": user.StudyDirection,
-		"created_at":      user.CreatedAt,
-		"updated_at":      user.UpdatedAt,
-	})
+func init() {
+	// 注册个人信息消息处理器
+	RegisterMessageHandler(proto.MessageType_PROFILE, handleProfileMessage)
 }

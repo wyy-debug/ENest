@@ -36,6 +36,13 @@ type ConnectionManager struct {
 // 全局连接管理器实例
 var globalManager = &ConnectionManager{}
 
+// handleHeartbeatMessage 处理心跳消息
+func handleHeartbeatMessage(conn *Connection, payload []byte) error {
+	// 更新最后一次心跳时间
+	conn.lastPing = time.Now()
+	return nil
+}
+
 func init() {
 	// 初始化加密管理器
 	crypto, err := utils.NewCryptoManager()
@@ -43,6 +50,9 @@ func init() {
 		log.Fatal("Failed to create crypto manager:", err)
 	}
 	globalManager.crypto = crypto
+
+	// 注册心跳消息处理器
+	RegisterMessageHandler(proto.MessageType_HEARTBEAT, handleHeartbeatMessage)
 }
 
 // HandleWebSocket 处理WebSocket连接
@@ -51,6 +61,7 @@ func HandleWebSocket(c *websocket.Conn) {
 	conn := &Connection{
 		conn:     c,
 		lastPing: time.Now(),
+		crypto:   globalManager.crypto,
 	}
 
 	// 启动心跳检测

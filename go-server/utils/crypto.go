@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"go-server/config"
 	"io"
 )
 
@@ -23,11 +24,8 @@ type CryptoManager struct {
 
 // NewCryptoManager 创建新的加密管理器
 func NewCryptoManager() (*CryptoManager, error) {
-	// 生成随机密钥
-	key := make([]byte, AESKeySize)
-	if _, err := io.ReadFull(rand.Reader, key); err != nil {
-		return nil, err
-	}
+	// 从配置文件中读取密钥
+	key := config.AESKey
 
 	// 创建AES加密块
 	block, err := aes.NewCipher(key)

@@ -2,11 +2,26 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import TypewriterText from '../components/TypewriterText.vue'
+import { wsClient } from '../utils/websocket'
+import { MessageType } from '../proto/message'
+import { WS_CONFIG } from '../config/config'
 
 const router = useRouter()
 const showHoneycomb = ref(false)
 const username = ref<string | null>(null)
 const isLoggedIn = ref(false)
+
+const initWebSocket = () => {
+  wsClient.connect(WS_CONFIG.SERVER_URL)
+  wsClient.registerHandler(MessageType.ERROR, (payload: Uint8Array) => {
+    try {
+      const errorMessage = JSON.parse(new TextDecoder().decode(payload))
+      console.error('WebSocket error:', errorMessage.message || '未知错误')
+    } catch (error) {
+      console.error('WebSocket error: 解析错误消息失败', error)
+    }
+  })
+}
 
 const checkLoginStatus = async () => {
   const userData = localStorage.getItem('user_data')
@@ -31,6 +46,7 @@ const onTypingFinished = () => {
 }
 
 onMounted(() => {
+  initWebSocket()
   checkLoginStatus()
 })
 </script>

@@ -29,33 +29,33 @@ func main() {
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowOrigins:     "*",
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Sec-WebSocket-Key, Sec-WebSocket-Protocol, Sec-WebSocket-Version, Sec-WebSocket-Extensions",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		ExposeHeaders:    "Sec-WebSocket-Accept",
 	})) // CORS中间件
 
-	// 设置路由
-	api := app.Group("/api")
-
-	// 健康检查路由
-	api.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status": "ok",
-		})
-	})
-
 	// WebSocket路由
-	ws := api.Group("/ws")
-	ws.Use(func(c *fiber.Ctx) error {
+	app.Use("/ws", func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
 			c.Locals("allowed", true)
 			return c.Next()
 		}
 		return fiber.ErrUpgradeRequired
 	})
-	ws.Get("/", websocket.New(handlers.HandleWebSocket, websocket.Config{
+	app.Get("/ws", websocket.New(handlers.HandleWebSocket, websocket.Config{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}))
+
+	// 设置API路由
+	// api := app.Group("/api")
+
+	// // 健康检查路由
+	// api.Get("/health", func(c *fiber.Ctx) error {
+	// 	return c.JSON(fiber.Map{
+	// 		"status": "ok",
+	// 	})
+	// })
 
 	// 启动服务器
 	log.Fatal(app.Listen("0.0.0.0:3000"))

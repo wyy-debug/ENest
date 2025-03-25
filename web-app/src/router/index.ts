@@ -57,9 +57,9 @@ router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('session_token')
   const userData = localStorage.getItem('user_data')
 
-  if (requiresAuth && (!token || !userData)) {
+  if (requiresAuth && (token === 'undefined' || token === null || !userData)) {
     next('/login')
-  } else if (to.path === '/login' && token && userData) {
+  } else if (to.path === '/login' && token != 'undefined'  && userData) {
     next('/')
   } else {
     next()

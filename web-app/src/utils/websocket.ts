@@ -102,8 +102,8 @@ class WebSocketClient {
       console.log('WebSocket connected');
       this.reconnectAttempts = 0;
       await this.initCrypto();
-      this.startHeartbeat();
-      this.authenticate();
+      //this.startHeartbeat();
+      //this.authenticate();
     };
 
     this.ws.onmessage = async (event) => {
@@ -174,9 +174,22 @@ class WebSocketClient {
 
   private authenticate(): void {
     const token = localStorage.getItem('session_token');
-    if (token) {
-      const authPayload = new TextEncoder().encode(JSON.stringify({ token }));
+    if (token == 'undefined' || token == null) {
+      console.log('No session token found, skipping authentication');
+      ElMessage.warning('未找到登录凭证，请先登录');
+      return;
+    }
+
+    try {
+      const authMessage = {
+        token: token,
+        device_id: '123123213'
+      };
+      const authPayload = Message.encode(Message.create({ type: MessageType.AUTH, ...authMessage })).finish();
       this.sendMessage(MessageType.AUTH, authPayload);
+    } catch (error) {
+      console.error('Failed to create auth message:', error);
+      ElMessage.error('认证消息创建失败');
     }
   }
 

@@ -26,11 +26,24 @@ const initWebSocket = () => {
 const checkLoginStatus = async () => {
   const userData = localStorage.getItem('user_data')
   const token = localStorage.getItem('session_token')
-  if (userData && token) {
+  if (!userData || token == 'undefined' || token == null) {
+    return
+  }
+  try {
     const user = JSON.parse(userData)
+    if (!user || !user.username) {
+      localStorage.removeItem('user_data')
+      localStorage.removeItem('session_token')
+      return
+    }
     username.value = user.username
     isLoggedIn.value = true
     router.push('/main')
+    initWebSocket()
+  } catch (error) {
+    console.error('解析用户数据失败:', error)
+    localStorage.removeItem('user_data')
+    localStorage.removeItem('session_token')
   }
 }
 
@@ -46,7 +59,6 @@ const onTypingFinished = () => {
 }
 
 onMounted(() => {
-  initWebSocket()
   checkLoginStatus()
 })
 </script>

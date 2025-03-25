@@ -33,6 +33,12 @@ export enum ProfileOperation {
   GET = 1
 }
 
+
+export interface AuthMessage {
+  token: string;
+  device_id?: string;
+}
+
 export interface StudyRoomMessage {
   operation: StudyRoomOperation;
   roomId?: number;

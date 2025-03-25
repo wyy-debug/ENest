@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import { wsClient } from '../utils/websocket'
 import { MessageType } from '../proto/message'
+import { WS_CONFIG } from '../config/config'
 
 const router = useRouter()
 const formRef = ref()
@@ -25,7 +26,7 @@ const rules = {
   confirmPassword: [
     { required: true, message: '请确认密码', trigger: 'blur' },
     {
-      validator: (rule: any, value: string, callback: Function) => {
+      validator: (_rule: any, value: string, callback: Function) => {
         if (value !== form.value.password) {
           callback(new Error('两次输入的密码不一致'))
         } else {
@@ -38,8 +39,8 @@ const rules = {
 }
 
 onMounted(() => {
-  checkLoginStatus()
-  initWebSocket()
+  //checkLoginStatus()
+  //initWebSocket()
 })
 
 const checkLoginStatus = async () => {
@@ -51,7 +52,7 @@ const checkLoginStatus = async () => {
 }
 
 const initWebSocket = () => {
-  wsClient.connect('ws://localhost:8080/ws')
+  wsClient.connect(WS_CONFIG.SERVER_URL)
   wsClient.registerHandler(MessageType.AUTH, handleAuthResponse)
   wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
 }
@@ -59,10 +60,16 @@ const initWebSocket = () => {
 const handleAuthResponse = (payload: Uint8Array) => {
   const response = JSON.parse(new TextDecoder().decode(payload))
   const { token, user } = response
+  if (token == 'undefined' || token == null || !user) {
+    ElMessage.error('认证响应数据不完整')
+    loading.value = false
+    return
+  }
   localStorage.setItem('session_token', token)
   localStorage.setItem('user_data', JSON.stringify(user))
+  localStorage.setItem('session_id', user.id)
   ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
-  router.push('/')
+  router.push('/main')
   loading.value = false
 }
 
@@ -91,6 +98,7 @@ const handleSubmit = async () => {
         }
 
     const payload = new TextEncoder().encode(JSON.stringify(authData))
+    initWebSocket()
     wsClient.sendMessage(MessageType.AUTH, payload)
   } catch (error: any) {
     ElMessage.error(error.message || '表单验证失败')

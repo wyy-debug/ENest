@@ -6,6 +6,7 @@ import { User } from '@element-plus/icons-vue'
 import { wsClient } from '../utils/websocket'
 import { MessageType } from '../proto/message'
 import { WS_CONFIG } from '../config/config'
+import { Message } from '../proto/message.pb';
 
 const router = useRouter()
 const formRef = ref()
@@ -52,9 +53,64 @@ const checkLoginStatus = async () => {
 }
 
 const initWebSocket = () => {
-  wsClient.connect(WS_CONFIG.SERVER_URL)
-  wsClient.registerHandler(MessageType.AUTH, handleAuthResponse)
-  wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
+  return new Promise<void>((resolve, reject) => {
+    try {
+      // 先注册事件处理器
+      wsClient.onOpen(async () => {
+        try {
+          wsClient.registerHandler(MessageType.AUTH, handleAuthResponse)
+          wsClient.registerHandler(MessageType.ERROR, handleErrorResponse)
+          return resolve()
+        } catch (error) {
+          reject(new Error(`WebSocket事件处理器注册失败: ${(error as Error).message}`))
+        }
+      })
+      
+      wsClient.onError((error: Error) => {
+        reject(new Error(`WebSocket连接失败: ${error?.message || '未知错误'}`))
+      })
+
+      // 最后尝试建立连接
+      wsClient.connect(WS_CONFIG.SERVER_URL)
+    } catch (error) {
+      reject(new Error(`WebSocket初始化失败:  ${(error as Error).message}`))
+    }
+  })
+}
+
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    loading.value = true
+
+    const authData = isLogin.value
+      ? {
+          username: form.value.username,
+          password: form.value.password
+        }
+      : {
+          username: form.value.username,
+          password: form.value.password,
+          email: form.value.email
+        }
+
+    // 等待WebSocket连接建立
+    await initWebSocket()
+
+    const message = Message.create({
+      type: MessageType.AUTH,
+      timestamp: Date.now(),
+      payload: new TextEncoder().encode(JSON.stringify(authData)),
+      session_id: localStorage.getItem('session_id') || ''
+    })
+    const payload = Message.encode(message).finish()
+    wsClient.sendMessage(MessageType.AUTH, payload)
+  } catch (error: any) {
+    ElMessage.error(error.message || '操作失败')
+    loading.value = false
+  }
 }
 
 const handleAuthResponse = (payload: Uint8Array) => {
@@ -77,33 +133,6 @@ const handleErrorResponse = (payload: Uint8Array) => {
   const error = JSON.parse(new TextDecoder().decode(payload))
   ElMessage.error(error.message || '操作失败')
   loading.value = false
-}
-
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  
-  try {
-    await formRef.value.validate()
-    loading.value = true
-
-    const authData = isLogin.value
-      ? {
-          username: form.value.username,
-          password: form.value.password
-        }
-      : {
-          username: form.value.username,
-          password: form.value.password,
-          email: form.value.email
-        }
-
-    const payload = new TextEncoder().encode(JSON.stringify(authData))
-    initWebSocket()
-    wsClient.sendMessage(MessageType.AUTH, payload)
-  } catch (error: any) {
-    ElMessage.error(error.message || '表单验证失败')
-    loading.value = false
-  }
 }
 
 const toggleMode = () => {

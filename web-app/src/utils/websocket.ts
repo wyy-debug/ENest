@@ -93,6 +93,17 @@ class WebSocketClient {
     return new Uint8Array(decryptedData);
   }
 
+  private onOpenHandlers: Array<() => Promise<void>> = [];
+  private onErrorHandlers: Array<(error: Error) => void> = [];
+
+  public onOpen(handler: () => Promise<void>): void {
+    this.onOpenHandlers.push(handler);
+  }
+
+  public onError(handler: (error: Error) => void): void {
+    this.onErrorHandlers.push(handler);
+  }
+
   public connect(url: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) return;
 
@@ -104,6 +115,7 @@ class WebSocketClient {
       await this.initCrypto();
       //this.startHeartbeat();
       //this.authenticate();
+      this.onOpenHandlers.forEach(handler => handler());
     };
 
     this.ws.onmessage = async (event) => {
@@ -141,9 +153,11 @@ class WebSocketClient {
       this.reconnect();
     };
 
-    this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    this.ws.onerror = (error: Event) => {
+      const wsError = error instanceof Error ? error : new Error('WebSocket连接错误');
+      console.error('WebSocket error:', wsError);
       ElMessage.error('WebSocket连接错误');
+      this.onErrorHandlers.forEach(handler => handler(wsError));
     };
   }
 
@@ -194,6 +208,7 @@ class WebSocketClient {
   }
 
   public async sendMessage(type: MessageType, payload: Uint8Array): Promise<void> {
+    console.log('MessageType' + MessageType);
     if (this.ws?.readyState !== WebSocket.OPEN) {
       ElMessage.error('WebSocket未连接');
       return;

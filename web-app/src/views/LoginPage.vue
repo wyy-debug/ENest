@@ -86,16 +86,12 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    // 对密码进行加密
-    const salt = await bcryptjs.genSalt(10)
-    const hashedPassword = await bcryptjs.hash(form.value.password, salt)
-
     // 等待WebSocket连接建立
     await initWebSocket()
     
     const authmessage = AuthMessage.create({
       username: form.value.username,
-      password_hash: hashedPassword,
+      password_hash: form.value.password,
       email: form.value.email
     }) 
     // const message = Message.create({

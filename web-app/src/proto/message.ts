@@ -33,41 +33,66 @@ export enum ProfileOperation {
   GET = 1
 }
 
+export interface Message {
+  type: MessageType;
+  timestamp: number;
+  payload: Uint8Array;
+  session_id: string;
+}
+
+export interface HeartbeatMessage {
+  timestamp: number;
+}
 
 export interface AuthMessage {
   token: string;
   device_id?: string;
+  username?: string;
+  email?: string;
+  password_hash?: string;
+}
+
+export interface ChatMessage {
+  sender_id: number;
+  receiver_id: number;
+  content: string;
+  message_type: string;
+}
+
+export interface SystemMessage {
+  type: string;
+  content: string;
 }
 
 export interface StudyRoomMessage {
   operation: StudyRoomOperation;
-  roomId?: number;
+  room_id?: number;
   name?: string;
-  maxMembers?: number;
-  isPrivate?: boolean;
+  max_members?: number;
+  is_private?: boolean;
   duration?: string;
-  shareLink?: string;
+  share_link?: string;
 }
 
 export interface FriendMessage {
   operation: FriendOperation;
-  friendId?: number;
+  friend_id?: number;
   action?: string;
-  contractType?: string;
-  contractTerms?: string;
-  contractId?: number;
+  contract_type?: string;
+  contract_terms?: string;
+  contract_id?: number;
 }
 
 export interface ProfileMessage {
   operation: ProfileOperation;
   username?: string;
   signature?: string;
-  studyDirection?: string;
+  study_direction?: string;
 }
 
 export interface ErrorMessage {
   code: number;
   message: string;
   detail?: string;
-  requestId?: string;
+  request_id?: string;
 }

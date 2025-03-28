@@ -6,7 +6,8 @@ import { User } from '@element-plus/icons-vue'
 import { wsClient } from '../utils/websocket'
 import { MessageType } from '../proto/message'
 import { WS_CONFIG } from '../config/config'
-import { Message } from '../proto/message.pb';
+import { Message, AuthMessage } from '../proto/message.pb';
+import bcryptjs from 'bcryptjs'
 
 const router = useRouter()
 const formRef = ref()
@@ -85,27 +86,25 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
-    const authData = isLogin.value
-      ? {
-          username: form.value.username,
-          password: form.value.password
-        }
-      : {
-          username: form.value.username,
-          password: form.value.password,
-          email: form.value.email
-        }
+    // 对密码进行加密
+    const salt = await bcryptjs.genSalt(10)
+    const hashedPassword = await bcryptjs.hash(form.value.password, salt)
 
     // 等待WebSocket连接建立
     await initWebSocket()
-
-    const message = Message.create({
-      type: MessageType.AUTH,
-      timestamp: Date.now(),
-      payload: new TextEncoder().encode(JSON.stringify(authData)),
-      session_id: localStorage.getItem('session_id') || ''
-    })
-    const payload = Message.encode(message).finish()
+    
+    const authmessage = AuthMessage.create({
+      username: form.value.username,
+      password_hash: hashedPassword,
+      email: form.value.email
+    }) 
+    // const message = Message.create({
+    //   type: MessageType.AUTH,
+    //   timestamp: Date.now(),
+    //   payload: authmessage,
+    //   session_id: localStorage.getItem('session_id') || ''
+    // })
+    const payload = AuthMessage.encode(authmessage).finish()
     wsClient.sendMessage(MessageType.AUTH, payload)
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')

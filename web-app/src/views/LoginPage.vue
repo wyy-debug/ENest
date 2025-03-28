@@ -4,10 +4,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import { wsClient } from '../utils/websocket'
-import { MessageType } from '../proto/message'
 import { WS_CONFIG } from '../config/config'
-import { Message, AuthMessage } from '../proto/message.pb';
+import protoRoot from '../proto/index'
 import bcryptjs from 'bcryptjs'
+
+// 使用新生成的protoRoot
+const { MessageType } = protoRoot.proto
 
 const router = useRouter()
 const formRef = ref()
@@ -89,18 +91,14 @@ const handleSubmit = async () => {
     // 等待WebSocket连接建立
     await initWebSocket()
     
-    const authmessage = AuthMessage.create({
+    // 使用新的protoRoot创建AuthMessage
+    const authmessage = protoRoot.proto.AuthMessage.create({
       username: form.value.username,
-      password_hash: form.value.password,
+      password: form.value.password,
       email: form.value.email
     }) 
-    // const message = Message.create({
-    //   type: MessageType.AUTH,
-    //   timestamp: Date.now(),
-    //   payload: authmessage,
-    //   session_id: localStorage.getItem('session_id') || ''
-    // })
-    const payload = AuthMessage.encode(authmessage).finish()
+    
+    const payload = protoRoot.proto.AuthMessage.encode(authmessage).finish()
     wsClient.sendMessage(MessageType.AUTH, payload)
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')
@@ -198,7 +196,7 @@ const toggleMode = () => {
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="请确认密码"
+            placeholder="请再次输入密码"
             show-password
           />
         </el-form-item>
@@ -206,20 +204,21 @@ const toggleMode = () => {
         <el-form-item>
           <el-button
             type="primary"
+            class="login-button"
             :loading="loading"
-            class="submit-button"
             @click="handleSubmit"
           >
             {{ isLogin ? '登录' : '注册' }}
           </el-button>
         </el-form-item>
 
-        <div class="toggle-mode">
+        <div class="login-footer">
           <el-button
-            type="text"
+            link
+            type="primary"
             @click="toggleMode"
           >
-            {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
+            {{ isLogin ? '没有账号？点击注册' : '已有账号？点击登录' }}
           </el-button>
         </div>
       </el-form>
@@ -232,31 +231,26 @@ const toggleMode = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f5f7fa;
 }
 
 .login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 20px;
+  width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
-.login-header h2 {
-  margin: 0;
-  color: #333;
-}
-
-.submit-button {
+.login-button {
   width: 100%;
 }
 
-.toggle-mode {
+.login-footer {
   text-align: center;
   margin-top: 16px;
 }

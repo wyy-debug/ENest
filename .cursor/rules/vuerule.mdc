@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+{
+  "$schema": "https://cursor.sh/schema",
+  "tasks": {
+    "protobuf": {
+      "command": "npm run generate:proto",
+      "description": "Generate Protobuf stubs",
+      "keybind": "ctrl+shift+p"
+    },
+    "frontend": {
+      "command": "cd web-app && npm run dev",
+      "description": "Start Vue frontend",
+      "keybind": "ctrl+shift+f"
+    },
+    "backend": {
+      "command": "cd go-server && go run main.go",
+      "description": "Start Go backend",
+      "keybind": "ctrl+shift+b"
+    },
+    "migrate": {
+      "command": "go run scripts/migrate.go",
+      "description": "Generate DB migration"
+    }
+  },
+  "templates": {
+    "proto": {
+      "path": "proto/*.proto",
+      "commands": {
+        "generate": "npm run generate:proto"
+      }
+    },
+    "vue": {
+      "path": "web-app/src/**/*.vue",
+      "commands": {
+        "format": "npm run format"
+      }
+    }
+  },
+  "scripts": {
+    "postCreate": [
+      "go install google.golang.org/protobuf/cmd/protoc-gen-go@latest",
+      "go install github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto@latest",
+      "npm install -g protobufjs"
+    ]
+  }
+}

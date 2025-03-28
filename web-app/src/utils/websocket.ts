@@ -1,10 +1,12 @@
-import { MessageType } from '../proto/message';
 import { ElMessage } from 'element-plus';
 import { CRYPTO_CONFIG } from '../config/crypto';
-import { Message } from '../proto/message.pb';
+import protoRoot from '../proto/index';
+
+// 使用新生成的MessageType枚举
+const { MessageType } = protoRoot.proto;
 
 interface WebSocketMessage {
-  type: MessageType;
+  type: typeof MessageType;
   timestamp: number;
   payload: Uint8Array;
   session_id: string;
@@ -18,7 +20,7 @@ class WebSocketClient {
   private reconnectInterval = 3000;
   private heartbeatInterval = 30000;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private messageHandlers: Map<MessageType, (payload: Uint8Array) => void> = new Map();
+  private messageHandlers: Map<typeof MessageType, (payload: Uint8Array) => void> = new Map();
   private cryptoKey: CryptoKey | null = null;
 
   private constructor() {}
@@ -125,8 +127,8 @@ class WebSocketClient {
           const encryptedData = new Uint8Array(buffer);
           const decryptedData = await this.decryptMessage(encryptedData);
           
-          // 使用protobuf解析消息
-          const message = Message.decode(decryptedData);
+          // 使用新的protobuf解析消息
+          const message = protoRoot.proto.Message.decode(decryptedData);
           
           console.log('Received message:', message);
           if (message.type === MessageType.HEARTBEAT) {
@@ -195,11 +197,11 @@ class WebSocketClient {
     }
 
     try {
-      const authMessage = {
+      const authMessage = protoRoot.proto.AuthMessage.create({
         token: token,
-        device_id: '123123213'
-      };
-      const authPayload = Message.encode(Message.create({ type: MessageType.AUTH, ...authMessage })).finish();
+        deviceId: '123123213'
+      });
+      const authPayload = protoRoot.proto.AuthMessage.encode(authMessage).finish();
       this.sendMessage(MessageType.AUTH, authPayload);
     } catch (error) {
       console.error('Failed to create auth message:', error);
@@ -207,8 +209,8 @@ class WebSocketClient {
     }
   }
 
-  public async sendMessage(type: MessageType, payload: Uint8Array): Promise<void> {
-    console.log('MessageType' + MessageType);
+  public async sendMessage(type: typeof MessageType, payload: Uint8Array): Promise<void> {
+    console.log('MessageType' + type);
     if (this.ws?.readyState !== WebSocket.OPEN) {
       ElMessage.error('WebSocket未连接');
       return;
@@ -216,15 +218,15 @@ class WebSocketClient {
 
     try {
       // 构建protobuf消息
-      const message = {
+      const message = protoRoot.proto.Message.create({
         type: type,
         timestamp: Math.floor(Date.now() / 1000),
         payload: payload,
-        session_id: localStorage.getItem('session_id') || ''
-      };
+        sessionId: localStorage.getItem('session_id') || ''
+      });
       console.log('send message Type' + type);
       // 使用protobuf序列化消息
-      const messageBuffer = Message.encode(Message.create(message)).finish();
+      const messageBuffer = protoRoot.proto.Message.encode(message).finish();
       const encryptedData = await this.encryptMessage(messageBuffer);
       this.ws.send(encryptedData);
     } catch (error) {
@@ -233,7 +235,7 @@ class WebSocketClient {
     }
   }
 
-  public registerHandler(type: MessageType, handler: (payload: Uint8Array) => void): void {
+  public registerHandler(type: typeof MessageType, handler: (payload: Uint8Array) => void): void {
     this.messageHandlers.set(type, handler);
   }
 

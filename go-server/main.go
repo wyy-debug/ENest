@@ -48,14 +48,48 @@ func main() {
 	}))
 
 	// 设置API路由
-	// api := app.Group("/api")
+	api := app.Group("/api")
 
-	// // 健康检查路由
-	// api.Get("/health", func(c *fiber.Ctx) error {
-	// 	return c.JSON(fiber.Map{
-	// 		"status": "ok",
-	// 	})
-	// })
+	// 健康检查路由
+	api.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status": "ok",
+		})
+	})
+
+	// 用户相关路由
+	api.Post("/register", handlers.Register)
+	api.Post("/login", handlers.Login)
+	api.Get("/profile", handlers.GetProfile)
+	api.Put("/profile", handlers.UpdateProfile)
+	
+	// 自习室相关路由
+	studyRooms := api.Group("/study-rooms")
+	studyRooms.Get("/", handlers.GetStudyRooms)
+	studyRooms.Post("/", handlers.CreateStudyRoom)
+	studyRooms.Get("/:id", handlers.GetStudyRoom)
+	studyRooms.Put("/:id", handlers.UpdateStudyRoom)
+	studyRooms.Delete("/:id", handlers.DeleteStudyRoom)
+	studyRooms.Post("/:id/join", handlers.JoinStudyRoom)
+	studyRooms.Post("/:id/leave", handlers.LeaveStudyRoom)
+	studyRooms.Get("/:id/members", handlers.GetStudyRoomMembers)
+	
+	// 好友相关路由
+	friends := api.Group("/friends")
+	friends.Get("/", handlers.GetFriends)
+	friends.Post("/request", handlers.SendFriendRequest)
+	friends.Put("/request/:id", handlers.RespondFriendRequest)
+	friends.Delete("/:id", handlers.RemoveFriend)
+	friends.Get("/messages/:friendId", handlers.GetFriendMessages)
+	friends.Post("/messages", handlers.SendFriendMessage)
+	
+	// 契约相关路由
+	contracts := api.Group("/contracts")
+	contracts.Get("/", handlers.GetContracts)
+	contracts.Post("/", handlers.CreateContract)
+	contracts.Get("/:id", handlers.GetContract)
+	contracts.Put("/:id", handlers.UpdateContract)
+	contracts.Delete("/:id", handlers.DeleteContract)
 
 	// 启动服务器
 	log.Fatal(app.Listen("0.0.0.0:3000"))

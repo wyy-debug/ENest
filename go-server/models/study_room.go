@@ -239,3 +239,115 @@ func DestroyStudyRoom(roomID, ownerID int) error {
 	_, err = db.Exec("DELETE FROM study_rooms WHERE id = $1", roomID)
 	return err
 }
+
+// GetStudyRooms 获取自习室列表
+func GetStudyRooms(limit, offset int) ([]StudyRoom, error) {
+	db := database.GetDB()
+	var rooms []StudyRoom
+
+	// 查询未过期的公开自习室
+	rows, err := db.Query(
+		`SELECT id, owner_id, name, description, max_members, is_private, created_at, expires_at 
+		 FROM study_rooms 
+		 WHERE is_private = false AND expires_at > $1 
+		 ORDER BY created_at DESC 
+		 LIMIT $2 OFFSET $3`,
+		time.Now(), limit, offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var room StudyRoom
+		err := rows.Scan(
+			&room.ID, 
+			&room.OwnerID, 
+			&room.Name, 
+			&room.Description, 
+			&room.MaxMembers, 
+			&room.IsPrivate, 
+			&room.CreatedAt, 
+			&room.ExpiresAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	return rooms, nil
+}
+
+// UpdateStudyRoom 更新自习室信息（仅房主可操作）
+func UpdateStudyRoom(roomID, ownerID int, name, description string, maxMembers int, isPrivate bool) (*StudyRoom, error) {
+	db := database.GetDB()
+
+	// 验证操作者是否为房主
+	room, err := GetStudyRoom(roomID)
+	if err != nil {
+		return nil, err
+	}
+
+	if room.OwnerID != ownerID {
+		return nil, errors.New("only room owner can update the study room")
+	}
+
+	// 更新自习室信息
+	_, err = db.Exec(
+		`UPDATE study_rooms 
+		 SET name = $1, description = $2, max_members = $3, is_private = $4 
+		 WHERE id = $5`,
+		name, description, maxMembers, isPrivate, roomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回更新后的自习室信息
+	return GetStudyRoom(roomID)
+}
+
+// GetStudyRoomMembers 获取自习室成员列表
+func GetStudyRoomMembers(roomID int) ([]RoomMemberInfo, error) {
+	db := database.GetDB()
+	var members []RoomMemberInfo
+
+	// 检查自习室是否存在
+	_, err := GetStudyRoom(roomID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取成员信息
+	rows, err := db.Query(
+		`SELECT rm.user_id, u.username, rm.is_anonymous, rm.joined_at 
+		 FROM room_members rm 
+		 LEFT JOIN users u ON rm.user_id = u.id 
+		 WHERE rm.room_id = $1`,
+		roomID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var member RoomMemberInfo
+		var username sql.NullString
+		err := rows.Scan(&member.UserID, &username, &member.IsAnonymous, &member.JoinedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		// 如果用户选择匿名，则不返回用户名
+		if !member.IsAnonymous && username.Valid {
+			member.Username = username.String
+		}
+
+		members = append(members, member)
+	}
+
+	return members, nil
+}

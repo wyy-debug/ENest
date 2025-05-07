@@ -4,12 +4,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import { wsClient } from '../utils/websocket'
+import { MessageType } from '../proto/message'
 import { WS_CONFIG } from '../config/config'
-import protoRoot from '../proto/index'
-import bcryptjs from 'bcryptjs'
-
-// 使用新生成的protoRoot
-const { MessageType } = protoRoot.proto
+import { Message, proto } from '../proto/message.pb'
+import * as protobuf from 'protobufjs'
 
 const router = useRouter()
 const formRef = ref()
@@ -88,17 +86,42 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
 
+    const authData = isLogin.value
+      ? {
+          username: form.value.username,
+          password: form.value.password
+        }
+      : {
+          username: form.value.username,
+          password: form.value.password,
+          email: form.value.email
+        }
+
     // 等待WebSocket连接建立
     await initWebSocket()
-    
-    // 使用新的protoRoot创建AuthMessage
-    const authmessage = protoRoot.proto.AuthMessage.create({
-      username: form.value.username,
-      password: form.value.password,
-      email: form.value.email
-    }) 
-    
-    const payload = protoRoot.proto.AuthMessage.encode(authmessage).finish()
+
+    // 创建AuthMessage
+    const authMessage = {
+      username: authData.username,
+      password_hash: authData.password,
+      email: authData.email || '',
+      token: '',
+      device_id: ''
+    }
+
+    // 使用protobuf序列化AuthMessage
+    const root = protobuf.Root.fromJSON(Message)
+    const AuthMessage = root.lookupType('proto.AuthMessage')
+    const errMsg = AuthMessage.verify(authMessage)
+    if (errMsg) throw Error(errMsg)
+
+    const message = Message.create({
+      type: MessageType.AUTH,
+      timestamp: Date.now(),
+      payload: AuthMessage.encode(AuthMessage.create(authMessage)).finish(),
+      session_id: localStorage.getItem('session_id') || ''
+    })
+    const payload = Message.encode(message).finish()
     wsClient.sendMessage(MessageType.AUTH, payload)
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')
@@ -107,19 +130,39 @@ const handleSubmit = async () => {
 }
 
 const handleAuthResponse = (payload: Uint8Array) => {
-  const response = JSON.parse(new TextDecoder().decode(payload))
-  const { token, user } = response
-  if (token == 'undefined' || token == null || !user) {
-    ElMessage.error('认证响应数据不完整')
+  try {
+    const root = protobuf.Root.fromJSON(Message)
+    const AuthMessage = root.lookupType('proto.AuthMessage')
+    const decodedMessage = AuthMessage.decode(payload) as proto.AuthMessage
+    const authResponse = {
+      token: decodedMessage.token,
+      username: decodedMessage.username || '',
+      email: decodedMessage.email || '',
+      device_id: decodedMessage.device_id || ''
+    }
+    const token = authResponse.token
+    const user = {
+      id: localStorage.getItem('session_id') || '',
+      username: authResponse.username,
+      email: authResponse.email
+    }
+
+    if (!token || !user.username) {
+      ElMessage.error('认证响应数据不完整')
+      loading.value = false
+      return
+    }
+
+    localStorage.setItem('session_token', token)
+    localStorage.setItem('user_data', JSON.stringify(user))
+    localStorage.setItem('session_id', user.id)
+    ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
+    router.push('/main')
+  } catch (error: any) {
+    ElMessage.error(`认证响应解析失败: ${error.message}`)
+  } finally {
     loading.value = false
-    return
   }
-  localStorage.setItem('session_token', token)
-  localStorage.setItem('user_data', JSON.stringify(user))
-  localStorage.setItem('session_id', user.id)
-  ElMessage.success(isLogin.value ? '登录成功' : '注册成功')
-  router.push('/main')
-  loading.value = false
 }
 
 const handleErrorResponse = (payload: Uint8Array) => {
@@ -196,7 +239,7 @@ const toggleMode = () => {
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="请再次输入密码"
+            placeholder="请确认密码"
             show-password
           />
         </el-form-item>
@@ -204,21 +247,20 @@ const toggleMode = () => {
         <el-form-item>
           <el-button
             type="primary"
-            class="login-button"
             :loading="loading"
+            class="submit-button"
             @click="handleSubmit"
           >
             {{ isLogin ? '登录' : '注册' }}
           </el-button>
         </el-form-item>
 
-        <div class="login-footer">
+        <div class="toggle-mode">
           <el-button
-            link
-            type="primary"
+            type="text"
             @click="toggleMode"
           >
-            {{ isLogin ? '没有账号？点击注册' : '已有账号？点击登录' }}
+            {{ isLogin ? '没有账号？立即注册' : '已有账号？立即登录' }}
           </el-button>
         </div>
       </el-form>
@@ -231,26 +273,31 @@ const toggleMode = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f5f7fa;
 }
 
 .login-card {
-  width: 400px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
-.login-button {
+.login-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.submit-button {
   width: 100%;
 }
 
-.login-footer {
+.toggle-mode {
   text-align: center;
   margin-top: 16px;
 }

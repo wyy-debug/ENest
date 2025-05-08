@@ -43,10 +43,20 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function fetchRooms() {
     try {
       loading.value = true
-      const response = await axios.get('/api/study-rooms')
-      rooms.value = response.data
+      const response = await axios.get('/api/v1/study-rooms')
+      // 确保response.data是数组
+      if (Array.isArray(response.data)) {
+        rooms.value = response.data
+      } else if (response.data && Array.isArray(response.data.data)) {
+        // 如果API返回格式是 {data: [...]}
+        rooms.value = response.data.data
+      } else {
+        console.error('Unexpected API response format:', response.data)
+        rooms.value = [] // 始终确保是数组
+      }
     } catch (error) {
       console.error('Failed to fetch rooms:', error)
+      rooms.value = [] // 出错时设置为空数组
     } finally {
       loading.value = false
     }
@@ -55,9 +65,19 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function fetchRoomById(id: number) {
     try {
       loading.value = true
-      const response = await axios.get(`/api/study-rooms/${id}`)
-      currentRoom.value = response.data
-      return response.data
+      const response = await axios.get(`/api/v1/study-rooms/${id}`)
+      // 确保API返回格式正确
+      if (response.data && response.data.id) {
+        currentRoom.value = response.data
+        return response.data
+      } else if (response.data && response.data.data && response.data.data.id) {
+        // 如果API返回格式是 {data: {...}}
+        currentRoom.value = response.data.data
+        return response.data.data
+      } else {
+        console.error(`Unexpected API response format for room ${id}:`, response.data)
+        return null
+      }
     } catch (error) {
       console.error(`Failed to fetch room ${id}:`, error)
       return null
@@ -69,9 +89,18 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function createRoom(roomData: Partial<StudyRoom>) {
     try {
       loading.value = true
-      const response = await axios.post('/api/study-rooms', roomData)
-      rooms.value.push(response.data)
-      return { success: true, data: response.data }
+      const response = await axios.post('/api/v1/study-rooms', roomData)
+      const newRoom = response.data && response.data.data ? response.data.data : response.data
+      
+      if (newRoom && newRoom.id) {
+        rooms.value.push(newRoom)
+        return { success: true, data: newRoom }
+      } else {
+        return {
+          success: false,
+          message: '创建自习室失败，服务器返回格式异常'
+        }
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -85,19 +114,29 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function updateRoom(id: number, roomData: Partial<StudyRoom>) {
     try {
       loading.value = true
-      const response = await axios.put(`/api/study-rooms/${id}`, roomData)
+      const response = await axios.put(`/api/v1/study-rooms/${id}`, roomData)
       
-      // 更新本地数据
-      const index = rooms.value.findIndex(room => room.id === id)
-      if (index !== -1) {
-        rooms.value[index] = { ...rooms.value[index], ...response.data }
+      // 提取正确的响应数据
+      const updatedRoom = response.data && response.data.data ? response.data.data : response.data
+      
+      if (updatedRoom && updatedRoom.id) {
+        // 更新本地数据
+        const index = rooms.value.findIndex(room => room.id === id)
+        if (index !== -1) {
+          rooms.value[index] = { ...rooms.value[index], ...updatedRoom }
+        }
+        
+        if (currentRoom.value?.id === id) {
+          currentRoom.value = { ...currentRoom.value, ...updatedRoom }
+        }
+        
+        return { success: true, data: updatedRoom }
+      } else {
+        return {
+          success: false,
+          message: '更新自习室失败，服务器返回格式异常'
+        }
       }
-      
-      if (currentRoom.value?.id === id) {
-        currentRoom.value = { ...currentRoom.value, ...response.data }
-      }
-      
-      return { success: true, data: response.data }
     } catch (error: any) {
       return {
         success: false,
@@ -111,7 +150,10 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function joinRoom(id: number, isAnonymous = false) {
     try {
       loading.value = true
-      const response = await axios.post(`/api/study-rooms/${id}/join`, { isAnonymous })
+      const response = await axios.post(`/api/v1/study-rooms/join`, { 
+        room_id: id,
+        is_anonymous: isAnonymous 
+      })
       
       // 更新本地数据
       await fetchRoomById(id)
@@ -130,7 +172,7 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function leaveRoom(id: number) {
     try {
       loading.value = true
-      await axios.post(`/api/study-rooms/${id}/leave`)
+      await axios.post(`/api/v1/study-rooms/${id}/leave`)
       
       // 更新本地数据
       if (currentRoom.value?.id === id) {

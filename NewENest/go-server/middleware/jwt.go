@@ -3,6 +3,7 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 // 密钥应当存储在环境变量中，这里仅作示例
-var jwtSecret = []byte("your-jwt-secret-key")
+var jwtSecret = []byte("newenest_secret_key")
 
 // JWTClaims 自定义JWT声明结构
 type JWTClaims struct {
@@ -71,49 +72,134 @@ func ParseToken(tokenString string) (*JWTClaims, error) {
 
 // GetUserID 从请求上下文获取用户ID
 func GetUserID(c *fiber.Ctx) (int, error) {
-	userID, ok := c.Locals("userID").(int)
+	userID, ok := c.Locals("user_id").(int)
 	if !ok {
-		return 0, errors.New("用户ID不存在")
+		return 0, errors.New("unauthorized")
 	}
 	return userID, nil
 }
 
-// JWTMiddleware 验证JWT令牌的中间件
+// JWTMiddleware JWT认证中间件
 func JWTMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// 从请求头获取令牌
+		// 获取请求头中的Authorization信息
 		authHeader := c.Get("Authorization")
+		log.Printf("JWT中间件 - 接收到的Authorization头: %s", authHeader)
+		
 		if authHeader == "" {
+			log.Println("JWT中间件 - 未提供认证令牌")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"code":    fiber.StatusUnauthorized,
-				"message": "未提供授权令牌",
+				"message": "未提供认证令牌",
 			})
 		}
-
-		// 验证令牌格式
+		
+		// 检查格式是否为"Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.Printf("JWT中间件 - 认证令牌格式无效: %s", authHeader)
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"code":    fiber.StatusUnauthorized,
-				"message": "授权格式无效",
+				"message": "认证令牌格式无效",
 			})
 		}
-
-		// 解析令牌
-		claims, err := ParseToken(parts[1])
+		
+		// 获取令牌
+		tokenString := parts[1]
+		log.Printf("JWT中间件 - 提取的令牌: %s", tokenString)
+		
+		// 试图使用自定义Claims解析
+		claims := &JWTClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("签名方法无效: %v", t.Header["alg"])
+			}
+			return []byte(GetJWTSecret()), nil
+		})
+		
+		// 如果自定义Claims解析失败，尝试使用MapClaims
 		if err != nil {
+			log.Printf("JWT中间件 - 使用自定义Claims解析失败: %v，尝试使用MapClaims", err)
+			
+			// 解析令牌
+			token, err = jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, fmt.Errorf("签名方法无效: %v", t.Header["alg"])
+				}
+				return []byte(GetJWTSecret()), nil
+			})
+			
+			if err != nil {
+				log.Printf("JWT中间件 - 令牌解析失败: %v", err)
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"code":    fiber.StatusUnauthorized,
+					"message": "无效的认证令牌",
+					"error":   err.Error(),
+				})
+			}
+		}
+		
+		// 验证令牌有效性
+		if !token.Valid {
+			log.Println("JWT中间件 - 令牌无效")
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"code":    fiber.StatusUnauthorized,
-				"message": "无效的令牌",
-				"errors":  err.Error(),
+				"message": "认证令牌已过期或无效",
 			})
 		}
-
-		// 将用户信息存储在上下文中
-		c.Locals("userID", claims.UserID)
-		c.Locals("email", claims.Email)
-
-		// 继续处理请求
+		
+		var userID float64
+		
+		// 获取令牌中的用户ID，尝试不同的方式
+		if claims, ok := token.Claims.(*JWTClaims); ok {
+			log.Printf("JWT中间件 - 成功解析自定义Claims，用户ID: %d", claims.UserID)
+			c.Locals("user_id", claims.UserID)
+			return c.Next()
+		} else if mapClaims, mapOk := token.Claims.(jwt.MapClaims); mapOk {
+			// 尝试获取user_id
+			if userIDValue, exists := mapClaims["user_id"]; exists {
+				userID, ok = userIDValue.(float64)
+				if !ok {
+					log.Printf("JWT中间件 - 无法将user_id转换为数字: %v", userIDValue)
+				}
+			} 
+			
+			// 如果user_id不存在或类型不对，尝试获取userID
+			if !ok {
+				if userIDValue, exists := mapClaims["userID"]; exists {
+					userID, ok = userIDValue.(float64)
+					if !ok {
+						log.Printf("JWT中间件 - 无法将userID转换为数字: %v", userIDValue)
+					}
+				}
+			}
+			
+			if !ok {
+				log.Println("JWT中间件 - 令牌中缺少有效的用户ID")
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"code":    fiber.StatusUnauthorized,
+					"message": "令牌中缺少有效的用户ID",
+				})
+			}
+			
+			log.Printf("JWT中间件 - 成功解析MapClaims，用户ID: %f", userID)
+		} else {
+			log.Println("JWT中间件 - 无法解析令牌Claims")
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"code":    fiber.StatusUnauthorized,
+				"message": "无法获取令牌信息",
+			})
+		}
+		
+		// 将用户ID存储在上下文中
+		c.Locals("user_id", int(userID))
+		log.Printf("JWT中间件 - 验证成功，用户ID: %d", int(userID))
+		
 		return c.Next()
 	}
+}
+
+// GetJWTSecret 获取JWT密钥
+func GetJWTSecret() string {
+	return "newenest_secret_key" // 在实际应用中应该从环境变量或配置中获取
 } 

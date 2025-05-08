@@ -88,17 +88,25 @@ const handleLogin = async () => {
     if (!valid) return
     
     loading.value = true
-    const result = await userStore.login(loginForm.email, loginForm.password)
-    loading.value = false
     
-    if (result.success) {
+    try {
+      // 使用userStore统一处理登录逻辑
+      const result = await userStore.login(loginForm.email, loginForm.password)
+      
+      if (!result.success) {
+        throw new Error(result.message || '登录失败')
+      }
+      
       ElMessage.success('登录成功')
       
-      // 如果有重定向路径，则导航到该路径，否则导航到首页
+      // 导航到指定页面
       const redirectPath = route.query.redirect as string || '/'
       router.push(redirectPath)
-    } else {
-      ElMessage.error(result.message)
+    } catch (error: any) {
+      console.error('登录失败:', error)
+      ElMessage.error(error.message || '登录失败，请稍后再试')
+    } finally {
+      loading.value = false
     }
   })
 }

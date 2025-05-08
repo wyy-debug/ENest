@@ -45,7 +45,7 @@ type FriendMessage struct {
 	Receiver    *User     `json:"receiver,omitempty" db:"-"` // 关联的接收者信息
 }
 
-// FriendRepository 好友关系数据访问接口
+// FriendRepository 好友仓库接口
 type FriendRepository interface {
 	// 好友关系管理
 	FindByID(id int) (*Friend, error)
@@ -72,18 +72,18 @@ type FriendRepository interface {
 	GetUnreadMessageCount(userID int) (int, error)
 }
 
-// FriendRequestDTO 好友请求数据传输对象
+// FriendRequestDTO 好友请求DTO
 type FriendRequestDTO struct {
 	ReceiverID int `json:"receiver_id" validate:"required"`
 }
 
-// FriendResponseDTO 好友请求响应数据传输对象
+// FriendResponseDTO 好友请求响应DTO
 type FriendResponseDTO struct {
 	RequestID int    `json:"request_id" validate:"required"`
 	Action    string `json:"action" validate:"required,oneof=accept reject"`
 }
 
-// FriendContractCreateDTO 好友契约创建数据传输对象
+// FriendContractCreateDTO 创建好友契约DTO
 type FriendContractCreateDTO struct {
 	FriendID      int       `json:"friend_id" validate:"required"`
 	ContractType  string    `json:"contract_type" validate:"required,oneof=study_buddy accountability_partner"`
@@ -94,14 +94,14 @@ type FriendContractCreateDTO struct {
 	GoalValue     int       `json:"goal_value,omitempty"`
 }
 
-// FriendMessageCreateDTO 好友消息创建数据传输对象
+// FriendMessageCreateDTO 创建好友消息DTO
 type FriendMessageCreateDTO struct {
 	ReceiverID  int    `json:"receiver_id" validate:"required"`
 	MessageType string `json:"message_type" validate:"required,oneof=text image"`
 	Content     string `json:"content" validate:"required"`
 }
 
-// FriendInfoDTO 好友信息数据传输对象
+// FriendInfoDTO 好友信息DTO
 type FriendInfoDTO struct {
 	ID               int       `json:"id"`
 	FriendshipID     int       `json:"friendship_id"`
@@ -117,34 +117,34 @@ type FriendInfoDTO struct {
 
 // ToFriendInfoDTO 将Friend转换为FriendInfoDTO
 func (f *Friend) ToFriendInfoDTO(hasActiveContract bool, unreadMessages int) *FriendInfoDTO {
-	if f.Friend == nil {
+	if f == nil || f.Friend == nil {
 		return nil
 	}
 	
 	return &FriendInfoDTO{
-		ID:               f.Friend.ID,
-		FriendshipID:     f.ID,
-		Username:         f.Friend.Username,
-		Avatar:           f.Friend.Avatar,
-		Signature:        f.Friend.Signature,
-		StudyDirection:   f.Friend.StudyDirection,
-		TotalStudyTime:   f.Friend.TotalStudyTime,
-		FriendSince:      f.CreatedAt,
+		ID:                f.Friend.ID,
+		FriendshipID:      f.ID,
+		Username:          f.Friend.Username,
+		Avatar:            f.Friend.Avatar,
+		Signature:         f.Friend.Signature,
+		StudyDirection:    f.Friend.StudyDirection,
+		TotalStudyTime:    f.Friend.TotalStudyTime,
+		FriendSince:       f.CreatedAt,
 		HasActiveContract: hasActiveContract,
-		UnreadMessages:   unreadMessages,
+		UnreadMessages:    unreadMessages,
 	}
 }
 
-// ContractDetailDTO 契约详情数据传输对象
+// ContractDetailDTO 契约详情DTO
 type ContractDetailDTO struct {
-	ID             int            `json:"id"`
-	ContractType   string         `json:"contract_type"`
-	ContractTerms  string         `json:"contract_terms"`
-	StartDate      time.Time      `json:"start_date"`
-	EndDate        time.Time      `json:"end_date,omitempty"`
-	GoalType       string         `json:"goal_type,omitempty"`
-	GoalValue      int            `json:"goal_value,omitempty"`
-	Status         string         `json:"status"`
-	CreatedAt      time.Time      `json:"created_at"`
+	ID             int       `json:"id"`
+	ContractType   string    `json:"contract_type"`
+	ContractTerms  string    `json:"contract_terms"`
+	StartDate      time.Time `json:"start_date"`
+	EndDate        time.Time `json:"end_date,omitempty"`
+	GoalType       string    `json:"goal_type,omitempty"`
+	GoalValue      int       `json:"goal_value,omitempty"`
+	Status         string    `json:"status"`
+	CreatedAt      time.Time `json:"created_at"`
 	Friend         *UserProfileDTO `json:"friend,omitempty"`
 } 

@@ -52,10 +52,13 @@ type DatabaseConfig struct {
 	
 	// SSL模式
 	SSLMode string `default:"disable" split_words:"true"`
+	
+	// 连接字符串
+	ConnectionString string `ignored:"true"`
 }
 
 // DSN 获取数据库连接字符串
-func (c DatabaseConfig) DSN() string {
+func (c *DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.Username, c.Password, c.Database, c.SSLMode,
@@ -100,6 +103,9 @@ func LoadConfig() (*Config, error) {
 	if config.Server.Environment == "development" {
 		setDefaultsForDevelopment(&config)
 	}
+	
+	// 设置数据库连接字符串
+	config.Database.ConnectionString = config.Database.DSN()
 	
 	return &config, nil
 }

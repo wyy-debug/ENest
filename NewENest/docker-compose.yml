@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # 前端应用
+  frontend:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - nest-network
+
+  # 后端API服务
+  backend:
+    build:
+      context: ./go-server
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - NEST_DATABASE_HOST=db
+      - NEST_DATABASE_PORT=5432
+      - NEST_DATABASE_USERNAME=postgres
+      - NEST_DATABASE_PASSWORD=postgres
+      - NEST_DATABASE_DATABASE=nest
+      - NEST_JWT_SECRET=your-secure-jwt-secret-key-change-this-in-production
+      - NEST_SERVER_ADDRESS=:8080
+      - NEST_SERVER_ENVIRONMENT=production
+      - NEST_CORS_ALLOW_ORIGINS=http://localhost:80,http://frontend:80
+    restart: always
+    networks:
+      - nest-network
+
+  # 数据库
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nest
+    restart: always
+    networks:
+      - nest-network
+
+  # Redis缓存
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: always
+    networks:
+      - nest-network
+
+networks:
+  nest-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data: 

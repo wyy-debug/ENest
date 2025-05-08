@@ -2,13 +2,12 @@ package database
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL 驱动
 	"github.com/rs/zerolog/log"
-
-	"newenest/config"
 )
 
 // DB 数据库连接
@@ -16,8 +15,47 @@ type DB struct {
 	*sqlx.DB
 }
 
+// DatabaseConfig 数据库配置
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+}
+
+// DSN 返回数据库连接字符串
+func (c DatabaseConfig) DSN() string {
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode)
+}
+
+// ConnectDB 从环境变量加载配置并连接到数据库
+func ConnectDB() (*DB, error) {
+	config := DatabaseConfig{
+		Host:     getEnv("DB_HOST", "localhost"),
+		Port:     getEnv("DB_PORT", "5432"),
+		User:     getEnv("DB_USER", "postgres"),
+		Password: getEnv("DB_PASSWORD", "postgres"),
+		DBName:   getEnv("DB_NAME", "newenest"),
+		SSLMode:  getEnv("DB_SSLMODE", "disable"),
+	}
+	
+	return Connect(config)
+}
+
+// 辅助函数，用于获取环境变量，如果不存在则返回默认值
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 // Connect 连接到数据库
-func Connect(cfg config.DatabaseConfig) (*DB, error) {
+func Connect(cfg DatabaseConfig) (*DB, error) {
 	log.Info().Msg("正在连接到数据库...")
 	
 	db, err := sqlx.Connect("postgres", cfg.DSN())

@@ -1,187 +1,182 @@
 package services
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"time"
 	
 	"golang.org/x/crypto/bcrypt"
-	
+	"github.com/golang-jwt/jwt/v4"
+
 	"NewENest/go-server/models"
 )
 
 // UserService 用户服务接口
 type UserService interface {
-	// 用户管理
-	Register(dto models.NewUserCreateDTO) (*models.User, error)
-	Login(username, password string) (*models.User, string, error)
-	Logout(token string) error
-	GetUserProfile(userID int) (*models.UserProfileDTO, error)
-	UpdateUserProfile(userID int, dto models.UserUpdateDTO) error
-	ChangePassword(userID int, oldPassword, newPassword string) error
-	
-	// 会话管理
-	ValidateToken(token string) (*models.User, error)
+	Register(dto models.UserRegisterDTO) (*models.AuthResponseDTO, error)
+	Login(dto models.UserLoginDTO) (*models.AuthResponseDTO, error)
+	GetCurrentUser(userID int) (*models.UserProfileDTO, error)
+	UpdateUser(userID int, dto models.UserUpdateDTO) (*models.UserProfileDTO, error)
 }
 
 // UserServiceImpl 用户服务实现
 type UserServiceImpl struct {
 	userRepo models.UserRepository
+	jwtSecret string
+	jwtExpiration time.Duration
 }
 
-// NewUserService 创建用户服务实例
-func NewUserService(userRepo models.UserRepository) UserService {
+// NewUserService 创建新的用户服务
+func NewUserService(userRepo models.UserRepository, jwtSecret string, jwtExpiration time.Duration) UserService {
 	return &UserServiceImpl{
-		userRepo: userRepo,
+		userRepo:      userRepo,
+		jwtSecret:     jwtSecret,
+		jwtExpiration: jwtExpiration,
 	}
 }
 
 // Register 用户注册
-func (s *UserServiceImpl) Register(dto models.NewUserCreateDTO) (*models.User, error) {
-	// 验证用户名和邮箱是否已存在
-	_, err := s.userRepo.FindByUsername(dto.Username)
-	if err == nil {
-		return nil, errors.New("username already exists")
+func (s *UserServiceImpl) Register(dto models.UserRegisterDTO) (*models.AuthResponseDTO, error) {
+	// 检查用户名是否已存在
+	existingUser, err := s.userRepo.FindByUsername(dto.Username)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("用户名已被占用")
 	}
 	
-	_, err = s.userRepo.FindByEmail(dto.Email)
-	if err == nil {
-		return nil, errors.New("email already exists")
+	// 检查邮箱是否已存在
+	existingUser, err = s.userRepo.FindByEmail(dto.Email)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("邮箱已被占用")
 	}
 	
-	// 密码加密
+	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("密码加密失败")
 	}
 	
-	// 创建用户对象
-	user := &models.User{
+	// 创建新用户
+	newUser := &models.User{
 		Username:     dto.Username,
 		Email:        dto.Email,
 		PasswordHash: string(hashedPassword),
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 	
-	// 保存用户信息
-	err = s.userRepo.Create(user)
+	// 保存用户
+	if err := s.userRepo.Create(newUser); err != nil {
+		return nil, errors.New("创建用户失败")
+	}
+	
+	// 生成令牌
+	token, err := s.generateToken(newUser.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("生成令牌失败")
 	}
 	
-	return user, nil
+	// 返回响应
+	return &models.AuthResponseDTO{
+		User:  newUser.ToProfileDTO(),
+		Token: token,
+	}, nil
 }
 
 // Login 用户登录
-func (s *UserServiceImpl) Login(username, password string) (*models.User, string, error) {
-	// 验证用户名和密码
-	user, err := s.userRepo.Authenticate(username, password)
-	if err != nil {
-		return nil, "", err
+func (s *UserServiceImpl) Login(dto models.UserLoginDTO) (*models.AuthResponseDTO, error) {
+	// 根据邮箱查找用户
+	user, err := s.userRepo.FindByEmail(dto.Email)
+	if err != nil || user == nil {
+		return nil, errors.New("用户不存在或密码错误")
 	}
 	
-	// 生成会话令牌
-	tokenBytes := make([]byte, 32)
-	_, err = rand.Read(tokenBytes)
-	if err != nil {
-		return nil, "", err
-	}
-	token := base64.URLEncoding.EncodeToString(tokenBytes)
-	
-	// 设置会话过期时间（默认7天）
-	expiresAt := time.Now().Add(7 * 24 * time.Hour)
-	
-	// 创建会话
-	_, err = s.userRepo.CreateSession(user.ID, token, expiresAt)
-	if err != nil {
-		return nil, "", err
+	// 验证密码
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(dto.Password)); err != nil {
+		return nil, errors.New("用户不存在或密码错误")
 	}
 	
-	return user, token, nil
+	// 生成令牌
+	token, err := s.generateToken(user.ID)
+	if err != nil {
+		return nil, errors.New("生成令牌失败")
+	}
+	
+	// 返回响应
+	return &models.AuthResponseDTO{
+		User:  user.ToProfileDTO(),
+		Token: token,
+	}, nil
 }
 
-// Logout 用户登出
-func (s *UserServiceImpl) Logout(token string) error {
-	return s.userRepo.DeleteSession(token)
-}
-
-// GetUserProfile 获取用户资料
-func (s *UserServiceImpl) GetUserProfile(userID int) (*models.UserProfileDTO, error) {
+// GetCurrentUser 获取当前用户信息
+func (s *UserServiceImpl) GetCurrentUser(userID int) (*models.UserProfileDTO, error) {
 	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return nil, err
+	if err != nil || user == nil {
+		return nil, errors.New("用户不存在")
 	}
 	
 	return user.ToProfileDTO(), nil
 }
 
-// UpdateUserProfile 更新用户资料
-func (s *UserServiceImpl) UpdateUserProfile(userID int, dto models.UserUpdateDTO) error {
+// UpdateUser 更新用户信息
+func (s *UserServiceImpl) UpdateUser(userID int, dto models.UserUpdateDTO) (*models.UserProfileDTO, error) {
+	// 获取当前用户
 	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return err
+	if err != nil || user == nil {
+		return nil, errors.New("用户不存在")
 	}
 	
 	// 更新用户信息
-	if dto.Username != nil && *dto.Username != user.Username {
-		// 检查新用户名是否已存在
-		_, err := s.userRepo.FindByUsername(*dto.Username)
-		if err == nil {
-			return errors.New("username already exists")
+	if dto.Username != "" {
+		// 检查用户名是否已被占用
+		existingUser, err := s.userRepo.FindByUsername(dto.Username)
+		if err == nil && existingUser != nil && existingUser.ID != userID {
+			return nil, errors.New("用户名已被占用")
 		}
-		user.Username = *dto.Username
+		user.Username = dto.Username
 	}
 	
-	if dto.Signature != nil {
-		user.Signature = *dto.Signature
+	if dto.Avatar != "" {
+		user.Avatar = dto.Avatar
 	}
 	
-	if dto.StudyDirection != nil {
-		user.StudyDirection = *dto.StudyDirection
+	if dto.Signature != "" {
+		user.Signature = dto.Signature
 	}
 	
-	if dto.Avatar != nil {
-		user.Avatar = *dto.Avatar
+	if dto.StudyDirection != "" {
+		user.StudyDirection = dto.StudyDirection
 	}
 	
-	return s.userRepo.Update(user)
+	user.UpdatedAt = time.Now()
+	
+	// 保存更新
+	if err := s.userRepo.Update(user); err != nil {
+		return nil, errors.New("更新用户失败")
+	}
+	
+	return user.ToProfileDTO(), nil
 }
 
-// ChangePassword 修改密码
-func (s *UserServiceImpl) ChangePassword(userID int, oldPassword, newPassword string) error {
-	user, err := s.userRepo.FindByID(userID)
-	if err != nil {
-		return err
+// generateToken 生成JWT令牌
+func (s *UserServiceImpl) generateToken(userID int) (*models.UserTokenDTO, error) {
+	// 设置过期时间
+	expiresAt := time.Now().Add(s.jwtExpiration).Unix()
+	
+	// 创建JWT声明
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"exp":     expiresAt,
 	}
 	
-	// 验证旧密码
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPassword))
-	if err != nil {
-		return errors.New("invalid old password")
-	}
-	
-	// 修改密码
-	return s.userRepo.ChangePassword(userID, newPassword)
-}
-
-// ValidateToken 验证令牌有效性
-func (s *UserServiceImpl) ValidateToken(token string) (*models.User, error) {
-	session, err := s.userRepo.GetSessionByToken(token)
+	// 生成令牌
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(s.jwtSecret))
 	if err != nil {
 		return nil, err
 	}
 	
-	// 检查会话是否过期
-	if time.Now().After(session.ExpiresAt) {
-		s.userRepo.DeleteSession(token)
-		return nil, errors.New("session expired")
-	}
-	
-	// 获取用户信息
-	user, err := s.userRepo.FindByID(session.UserID)
-	if err != nil {
-		return nil, err
-	}
-	
-	return user, nil
+	return &models.UserTokenDTO{
+		Token:     signedToken,
+		ExpiresAt: expiresAt,
+	}, nil
 } 

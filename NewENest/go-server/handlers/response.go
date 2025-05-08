@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+	
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -9,13 +11,16 @@ type Response struct {
 	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
-	Errors  interface{} `json:"errors,omitempty"`
 }
 
 // Success 返回成功响应
 func Success(c *fiber.Ctx, data interface{}, message string) error {
-	return c.Status(fiber.StatusOK).JSON(Response{
-		Code:    fiber.StatusOK,
+	if message == "" {
+		message = "操作成功"
+	}
+	
+	return c.Status(http.StatusOK).JSON(Response{
+		Code:    http.StatusOK,
 		Message: message,
 		Data:    data,
 	})
@@ -31,53 +36,63 @@ func Created(c *fiber.Ctx, data interface{}, message string) error {
 }
 
 // BadRequest 返回错误请求响应
-func BadRequest(c *fiber.Ctx, message string, err error) error {
-	var errors interface{}
-	if err != nil {
-		errors = err.Error()
+func BadRequest(c *fiber.Ctx, message string, data interface{}) error {
+	if message == "" {
+		message = "请求参数错误"
 	}
 	
-	return c.Status(fiber.StatusBadRequest).JSON(Response{
-		Code:    fiber.StatusBadRequest,
+	return c.Status(http.StatusBadRequest).JSON(Response{
+		Code:    http.StatusBadRequest,
 		Message: message,
-		Errors:  errors,
+		Data:    data,
 	})
 }
 
 // Unauthorized 返回未授权响应
 func Unauthorized(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusUnauthorized).JSON(Response{
-		Code:    fiber.StatusUnauthorized,
+	if message == "" {
+		message = "未授权的访问"
+	}
+	
+	return c.Status(http.StatusUnauthorized).JSON(Response{
+		Code:    http.StatusUnauthorized,
 		Message: message,
 	})
 }
 
 // Forbidden 返回禁止访问响应
 func Forbidden(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusForbidden).JSON(Response{
-		Code:    fiber.StatusForbidden,
+	if message == "" {
+		message = "禁止访问"
+	}
+	
+	return c.Status(http.StatusForbidden).JSON(Response{
+		Code:    http.StatusForbidden,
 		Message: message,
 	})
 }
 
 // NotFound 返回未找到响应
 func NotFound(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusNotFound).JSON(Response{
-		Code:    fiber.StatusNotFound,
+	if message == "" {
+		message = "资源不存在"
+	}
+	
+	return c.Status(http.StatusNotFound).JSON(Response{
+		Code:    http.StatusNotFound,
 		Message: message,
 	})
 }
 
 // ServerError 返回服务器错误响应
 func ServerError(c *fiber.Ctx, message string, err error) error {
-	var errors interface{}
-	if err != nil {
-		errors = err.Error()
+	if message == "" {
+		message = "服务器内部错误"
 	}
 	
-	return c.Status(fiber.StatusInternalServerError).JSON(Response{
-		Code:    fiber.StatusInternalServerError,
+	return c.Status(http.StatusInternalServerError).JSON(Response{
+		Code:    http.StatusInternalServerError,
 		Message: message,
-		Errors:  errors,
+		Data:    err.Error(),
 	})
 } 

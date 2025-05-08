@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENest登录测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    textarea, pre {
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      margin-bottom: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin: 15px 0;
+      background-color: #f9f9f9;
+    }
+    .error {
+      color: #721c24;
+      background-color: #f8d7da;
+      border-color: #f5c6cb;
+    }
+    .success {
+      color: #155724;
+      background-color: #d4edda;
+      border-color: #c3e6cb;
+    }
+  </style>
+</head>
+<body>
+  <h1>ENest登录测试工具</h1>
+
+  <div class="card">
+    <h2>当前本地存储内容</h2>
+    <div id="localStorage"></div>
+    <button onclick="refreshLocalStorage()">刷新</button>
+    <button onclick="clearLocalStorage()">清除本地存储</button>
+  </div>
+
+  <div class="card">
+    <h2>测试登录</h2>
+    <p>Email: <input type="text" id="email" value="test@example.com"></p>
+    <p>Password: <input type="password" id="password" value="password123"></p>
+    <button onclick="testLogin()">测试登录</button>
+    <div id="loginResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>测试API请求</h2>
+    <p>Endpoint: <input type="text" id="endpoint" value="/api/v1/friends"></p>
+    <button onclick="testAPI()">测试API调用</button>
+    <div id="apiResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>生成测试Token</h2>
+    <button onclick="generateToken()">生成测试Token</button>
+    <p>将使用正确的格式和密钥生成Token</p>
+    <div id="tokenResult"></div>
+  </div>
+
+  <script>
+    // 刷新本地存储显示
+    function refreshLocalStorage() {
+      const storageDiv = document.getElementById('localStorage');
+      storageDiv.innerHTML = '';
+      
+      // 显示token
+      const token = localStorage.getItem('token');
+      const tokenPre = document.createElement('pre');
+      tokenPre.textContent = token ? `token: ${token}` : '未找到token';
+      storageDiv.appendChild(tokenPre);
+      
+      // 显示用户信息
+      const user = localStorage.getItem('user');
+      const userPre = document.createElement('pre');
+      userPre.textContent = user ? `user: ${user}` : '未找到用户信息';
+      storageDiv.appendChild(userPre);
+    }
+    
+    // 清除本地存储
+    function clearLocalStorage() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      refreshLocalStorage();
+    }
+    
+    // 测试登录
+    async function testLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const resultDiv = document.getElementById('loginResult');
+      
+      resultDiv.innerHTML = '<p>登录中...</p>';
+      
+      try {
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          resultDiv.innerHTML = `<pre class="success">登录成功!\n${JSON.stringify(data, null, 2)}</pre>`;
+          
+          // 保存token和用户信息
+          if (data.token) {
+            const formattedToken = data.token.startsWith('Bearer ') 
+              ? data.token 
+              : `Bearer ${data.token}`;
+            
+            localStorage.setItem('token', formattedToken);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            refreshLocalStorage();
+          }
+        } else {
+          resultDiv.innerHTML = `<pre class="error">登录失败: ${data.message || '未知错误'}\n${JSON.stringify(data, null, 2)}</pre>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<pre class="error">请求错误: ${error.message}</pre>`;
+      }
+    }
+    
+    // 测试API调用
+    async function testAPI() {
+      const endpoint = document.getElementById('endpoint').value;
+      const resultDiv = document.getElementById('apiResult');
+      
+      resultDiv.innerHTML = '<p>请求中...</p>';
+      
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers.Authorization = token;
+        }
+        
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: headers,
+        });
+        
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+          resultDiv.innerHTML = `
+            <p>状态码: ${response.status}</p>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+            <p>请求头:</p>
+            <pre>Authorization: ${headers.Authorization || '无'}</pre>
+          `;
+        } else {
+          const text = await response.text();
+          resultDiv.innerHTML = `
+            <p>状态码: ${response.status}</p>
+            <pre>${text}</pre>
+            <p>请求头:</p>
+            <pre>Authorization: ${headers.Authorization || '无'}</pre>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<pre class="error">请求错误: ${error.message}</pre>`;
+      }
+    }
+    
+    // 生成测试Token
+    function generateToken() {
+      // 创建payload
+      const payload = {
+        user_id: 1,
+        email: 'test@example.com',
+        exp: Math.floor(Date.now() / 1000) + 86400, // 24小时后过期
+        iat: Math.floor(Date.now() / 1000),
+        iss: 'newenest'
+      };
+      
+      // 使用JavaScript中的btoa进行Base64编码，模拟JWT
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const encodedPayload = btoa(JSON.stringify(payload));
+      
+      // 这里不进行实际签名，只是生成格式正确的token示例
+      const token = `${header}.${encodedPayload}.SIGNATURE`;
+      const formattedToken = `Bearer ${token}`;
+      
+      const resultDiv = document.getElementById('tokenResult');
+      resultDiv.innerHTML = `<pre>${formattedToken}</pre>
+      <button onclick="saveTestToken('${formattedToken}')">保存到本地存储</button>
+      <p class="error">注意：此Token只是格式正确的示例，实际使用时需要后端正确签名生成</p>`;
+    }
+    
+    // 保存测试Token
+    function saveTestToken(token) {
+      localStorage.setItem('token', token);
+      refreshLocalStorage();
+    }
+    
+    // 页面加载时刷新本地存储显示
+    document.addEventListener('DOMContentLoaded', refreshLocalStorage);
+  </script>
+</body>
+</html> 

@@ -1,0 +1,558 @@
+=== RUN   TestRegisterUser
+=== RUN   TestRegisterUser/成功注册新用户
+=== RUN   TestRegisterUser/使用已存在的用户名注册
+=== RUN   TestRegisterUser/使用已存在的邮箱注册
+=== RUN   TestRegisterUser/请求参数不完整
+    auth_test.go:96: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:96
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 201
+        	Test:       	TestRegisterUser/请求参数不完整
+--- FAIL: TestRegisterUser (0.00s)
+    --- PASS: TestRegisterUser/成功注册新用户 (0.00s)
+    --- PASS: TestRegisterUser/使用已存在的用户名注册 (0.00s)
+    --- PASS: TestRegisterUser/使用已存在的邮箱注册 (0.00s)
+    --- FAIL: TestRegisterUser/请求参数不完整 (0.00s)
+=== RUN   TestLoginUser
+=== RUN   TestLoginUser/成功登录
+    auth_test.go:123: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:123
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 0
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:124: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:124
+        	Error:      	Not equal: 
+        	            	expected: "登录成功"
+        	            	actual  : ""
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-登录成功
+        	            	+
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:125: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:125
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:129: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:129
+        	Error:      	Should be true
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:130: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:130
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:133: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:133
+        	Error:      	Should be true
+        	Test:       	TestLoginUser/成功登录
+    auth_test.go:134: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:134
+        	Error:      	Not equal: 
+        	            	expected: string("test_user")
+        	            	actual  : <nil>(<nil>)
+        	Test:       	TestLoginUser/成功登录
+=== RUN   TestLoginUser/邮箱不存在
+    auth_test.go:156: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:156
+        	Error:      	Not equal: 
+        	            	expected: "用户名或密码错误"
+        	            	actual  : "邮箱或密码错误"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-用户名或密码错误
+        	            	+邮箱或密码错误
+        	Test:       	TestLoginUser/邮箱不存在
+=== RUN   TestLoginUser/密码错误
+    auth_test.go:178: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:178
+        	Error:      	Not equal: 
+        	            	expected: "用户名或密码错误"
+        	            	actual  : "邮箱或密码错误"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-用户名或密码错误
+        	            	+邮箱或密码错误
+        	Test:       	TestLoginUser/密码错误
+=== RUN   TestLoginUser/请求参数不完整
+    auth_test.go:191: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/auth_test.go:191
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestLoginUser/请求参数不完整
+--- FAIL: TestLoginUser (0.00s)
+    --- FAIL: TestLoginUser/成功登录 (0.00s)
+    --- FAIL: TestLoginUser/邮箱不存在 (0.00s)
+    --- FAIL: TestLoginUser/密码错误 (0.00s)
+    --- FAIL: TestLoginUser/请求参数不完整 (0.00s)
+=== RUN   TestGetFriendList
+=== RUN   TestGetFriendList/成功获取好友列表
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:19: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:19
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestGetFriendList/成功获取好友列表
+    friend_test.go:26: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:26
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestGetFriendList/成功获取好友列表
+    friend_test.go:27: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:27
+        	Error:      	Not equal: 
+        	            	expected: "获取好友列表成功"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-获取好友列表成功
+        	            	+无效的认证令牌
+        	Test:       	TestGetFriendList/成功获取好友列表
+    friend_test.go:30: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:30
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestGetFriendList/成功获取好友列表
+=== RUN   TestGetFriendList/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestGetFriendList (0.00s)
+    --- FAIL: TestGetFriendList/成功获取好友列表 (0.00s)
+    --- PASS: TestGetFriendList/未授权访问 (0.00s)
+=== RUN   TestGetFriendRequests
+=== RUN   TestGetFriendRequests/成功获取好友请求列表
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:57: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:57
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestGetFriendRequests/成功获取好友请求列表
+    friend_test.go:64: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:64
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestGetFriendRequests/成功获取好友请求列表
+    friend_test.go:65: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:65
+        	Error:      	Not equal: 
+        	            	expected: "获取好友请求列表成功"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-获取好友请求列表成功
+        	            	+无效的认证令牌
+        	Test:       	TestGetFriendRequests/成功获取好友请求列表
+    friend_test.go:68: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:68
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestGetFriendRequests/成功获取好友请求列表
+=== RUN   TestGetFriendRequests/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestGetFriendRequests (0.00s)
+    --- FAIL: TestGetFriendRequests/成功获取好友请求列表 (0.00s)
+    --- PASS: TestGetFriendRequests/未授权访问 (0.00s)
+=== RUN   TestSendFriendRequest
+=== RUN   TestSendFriendRequest/成功发送好友请求
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:94: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:94
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/成功发送好友请求
+    friend_test.go:101: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:101
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/成功发送好友请求
+    friend_test.go:102: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:102
+        	Error:      	Not equal: 
+        	            	expected: "好友请求发送成功"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-好友请求发送成功
+        	            	+无效的认证令牌
+        	Test:       	TestSendFriendRequest/成功发送好友请求
+=== RUN   TestSendFriendRequest/向自己发送好友请求
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:115: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:115
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/向自己发送好友请求
+    friend_test.go:122: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:122
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/向自己发送好友请求
+    friend_test.go:123: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:123
+        	Error:      	Not equal: 
+        	            	expected: "不能添加自己为好友"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-不能添加自己为好友
+        	            	+无效的认证令牌
+        	Test:       	TestSendFriendRequest/向自己发送好友请求
+=== RUN   TestSendFriendRequest/向已经是好友的用户发送请求
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:136: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:136
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/向已经是好友的用户发送请求
+    friend_test.go:143: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:143
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestSendFriendRequest/向已经是好友的用户发送请求
+    friend_test.go:144: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:144
+        	Error:      	Not equal: 
+        	            	expected: "你们已经是好友关系"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-你们已经是好友关系
+        	            	+无效的认证令牌
+        	Test:       	TestSendFriendRequest/向已经是好友的用户发送请求
+=== RUN   TestSendFriendRequest/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestSendFriendRequest (0.00s)
+    --- FAIL: TestSendFriendRequest/成功发送好友请求 (0.00s)
+    --- FAIL: TestSendFriendRequest/向自己发送好友请求 (0.00s)
+    --- FAIL: TestSendFriendRequest/向已经是好友的用户发送请求 (0.00s)
+    --- PASS: TestSendFriendRequest/未授权访问 (0.00s)
+=== RUN   TestRespondToFriendRequest
+=== RUN   TestRespondToFriendRequest/成功接受好友请求
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:176: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:176
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/成功接受好友请求
+    friend_test.go:183: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:183
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/成功接受好友请求
+    friend_test.go:184: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:184
+        	Error:      	Not equal: 
+        	            	expected: "已接受好友请求"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-已接受好友请求
+        	            	+无效的认证令牌
+        	Test:       	TestRespondToFriendRequest/成功接受好友请求
+=== RUN   TestRespondToFriendRequest/成功拒绝好友请求
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:198: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:198
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/成功拒绝好友请求
+    friend_test.go:205: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:205
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/成功拒绝好友请求
+    friend_test.go:206: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:206
+        	Error:      	Not equal: 
+        	            	expected: "已拒绝好友请求"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-已拒绝好友请求
+        	            	+无效的认证令牌
+        	Test:       	TestRespondToFriendRequest/成功拒绝好友请求
+=== RUN   TestRespondToFriendRequest/无效的请求ID
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:221: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:221
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/无效的请求ID
+=== RUN   TestRespondToFriendRequest/无效的操作类型
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:235: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:235
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/无效的操作类型
+    friend_test.go:242: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:242
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestRespondToFriendRequest/无效的操作类型
+    friend_test.go:243: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:243
+        	Error:      	Not equal: 
+        	            	expected: "操作类型必须是 accept 或 reject"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-操作类型必须是 accept 或 reject
+        	            	+无效的认证令牌
+        	Test:       	TestRespondToFriendRequest/无效的操作类型
+=== RUN   TestRespondToFriendRequest/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestRespondToFriendRequest (0.00s)
+    --- FAIL: TestRespondToFriendRequest/成功接受好友请求 (0.00s)
+    --- FAIL: TestRespondToFriendRequest/成功拒绝好友请求 (0.00s)
+    --- FAIL: TestRespondToFriendRequest/无效的请求ID (0.00s)
+    --- FAIL: TestRespondToFriendRequest/无效的操作类型 (0.00s)
+    --- PASS: TestRespondToFriendRequest/未授权访问 (0.00s)
+=== RUN   TestDeleteFriend
+=== RUN   TestDeleteFriend/删除好友
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    friend_test.go:270: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:270
+        	Error:      	Not equal: 
+        	            	expected: 501
+        	            	actual  : 401
+        	Test:       	TestDeleteFriend/删除好友
+    friend_test.go:277: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/friend_test.go:277
+        	Error:      	Not equal: 
+        	            	expected: "删除好友功能待实现"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-删除好友功能待实现
+        	            	+无效的认证令牌
+        	Test:       	TestDeleteFriend/删除好友
+=== RUN   TestDeleteFriend/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestDeleteFriend (0.00s)
+    --- FAIL: TestDeleteFriend/删除好友 (0.00s)
+    --- PASS: TestDeleteFriend/未授权访问 (0.00s)
+=== RUN   TestGetStudyRooms
+=== RUN   TestGetStudyRooms/获取自习室列表成功
+    study_room_test.go:26: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:26
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 0
+        	Test:       	TestGetStudyRooms/获取自习室列表成功
+    study_room_test.go:27: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:27
+        	Error:      	Not equal: 
+        	            	expected: "获取自习室列表成功"
+        	            	actual  : ""
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-获取自习室列表成功
+        	            	+
+        	Test:       	TestGetStudyRooms/获取自习室列表成功
+=== RUN   TestGetStudyRooms/带分页参数获取自习室列表
+    study_room_test.go:45: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:45
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 0
+        	Test:       	TestGetStudyRooms/带分页参数获取自习室列表
+--- FAIL: TestGetStudyRooms (0.00s)
+    --- FAIL: TestGetStudyRooms/获取自习室列表成功 (0.00s)
+    --- FAIL: TestGetStudyRooms/带分页参数获取自习室列表 (0.00s)
+=== RUN   TestGetStudyRoom
+=== RUN   TestGetStudyRoom/获取自习室详情成功
+    study_room_test.go:65: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:65
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 0
+        	Test:       	TestGetStudyRoom/获取自习室详情成功
+    study_room_test.go:68: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:68
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestGetStudyRoom/获取自习室详情成功
+=== RUN   TestGetStudyRoom/获取不存在的自习室
+--- FAIL: TestGetStudyRoom (0.00s)
+    --- FAIL: TestGetStudyRoom/获取自习室详情成功 (0.00s)
+    --- PASS: TestGetStudyRoom/获取不存在的自习室 (0.00s)
+=== RUN   TestCreateStudyRoom
+=== RUN   TestCreateStudyRoom/成功创建自习室
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    study_room_test.go:106: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:106
+        	Error:      	Not equal: 
+        	            	expected: 201
+        	            	actual  : 401
+        	Test:       	TestCreateStudyRoom/成功创建自习室
+    study_room_test.go:113: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:113
+        	Error:      	Not equal: 
+        	            	expected: 201
+        	            	actual  : 401
+        	Test:       	TestCreateStudyRoom/成功创建自习室
+    study_room_test.go:114: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:114
+        	Error:      	Not equal: 
+        	            	expected: "自习室创建成功"
+        	            	actual  : "无效的认证令牌"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-自习室创建成功
+        	            	+无效的认证令牌
+        	Test:       	TestCreateStudyRoom/成功创建自习室
+    study_room_test.go:115: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:115
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestCreateStudyRoom/成功创建自习室
+=== RUN   TestCreateStudyRoom/缺少必要参数
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 提取的令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDcxMDU3NzcsImlkIjoxLCJ1c2VybmFtZSI6InRlc3RfdXNlciJ9.sczgPYIDWX6dtdpPIHnTKnsAtWd9gqNkdPm1w7fA00w
+2025/05/12 11:09:37 JWT中间件 - 使用自定义Claims解析失败: signature is invalid，尝试使用MapClaims
+2025/05/12 11:09:37 JWT中间件 - 令牌解析失败: signature is invalid
+    study_room_test.go:129: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:129
+        	Error:      	Not equal: 
+        	            	expected: 400
+        	            	actual  : 401
+        	Test:       	TestCreateStudyRoom/缺少必要参数
+=== RUN   TestCreateStudyRoom/未授权访问
+2025/05/12 11:09:37 JWT中间件 - 接收到的Authorization头: 
+2025/05/12 11:09:37 JWT中间件 - 未提供认证令牌
+--- FAIL: TestCreateStudyRoom (0.00s)
+    --- FAIL: TestCreateStudyRoom/成功创建自习室 (0.00s)
+    --- FAIL: TestCreateStudyRoom/缺少必要参数 (0.00s)
+    --- PASS: TestCreateStudyRoom/未授权访问 (0.00s)
+=== RUN   TestJoinStudyRoom
+=== RUN   TestJoinStudyRoom/成功加入自习室
+    study_room_test.go:162: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:162
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 400
+        	Test:       	TestJoinStudyRoom/成功加入自习室
+    study_room_test.go:169: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:169
+        	Error:      	Not equal: 
+        	            	expected: 200
+        	            	actual  : 400
+        	Test:       	TestJoinStudyRoom/成功加入自习室
+    study_room_test.go:170: 
+        	Error Trace:	/home/ENest/NewENest/go-server/test/study_room_test.go:170
+        	Error:      	Not equal: 
+        	            	expected: "成功加入自习室"
+        	            	actual  : "分享链接不能为空"
+        	            	
+        	            	Diff:
+        	            	--- Expected
+        	            	+++ Actual
+        	            	@@ -1 +1 @@
+        	            	-成功加入自习室
+        	            	+分享链接不能为空
+        	Test:       	TestJoinStudyRoom/成功加入自习室
+=== RUN   TestJoinStudyRoom/加入不存在的自习室
+=== RUN   TestJoinStudyRoom/未授权访问
+--- FAIL: TestJoinStudyRoom (0.00s)
+    --- FAIL: TestJoinStudyRoom/成功加入自习室 (0.00s)
+    --- PASS: TestJoinStudyRoom/加入不存在的自习室 (0.00s)
+    --- PASS: TestJoinStudyRoom/未授权访问 (0.00s)
+FAIL
+FAIL	NewENest/go-server/test	0.019s
+FAIL

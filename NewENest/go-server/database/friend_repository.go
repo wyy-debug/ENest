@@ -11,20 +11,54 @@ import (
 	"NewENest/go-server/models"
 )
 
-// FriendRepository 好友数据库操作实现
-type FriendRepository struct {
+// FriendRepository 接口定义
+type FriendRepository interface {
+	GetFriendList(userID int) ([]models.Friend, error)
+	GetFriendRequests(userID int) ([]models.FriendRequest, error)
+	SendFriendRequest(userID, receiverID int) error
+	RespondToFriendRequest(requestID, userID int, accept bool) error
+	CheckFriendship(userID, otherID int) (bool, error)
+	AcceptFriendRequest(requestID, userID int) error
+	RejectFriendRequest(requestID, userID int) error
+	FindByID(id int) (*models.Friend, error)
+	DeleteFriend(userID, friendID int) error
+	IsFriend(userID, friendID int) (bool, error)
+	SaveMessage(message *models.FriendMessage) error
+	GetMessage(messageID int) (*models.FriendMessage, error)
+	MarkMessageAsRead(messageID int) error
+	GetChatHistory(userID, friendID int, limit, offset int) ([]models.FriendMessage, int, error)
+	GetUnreadMessageCount(userID int) (int, error)
+	CreateContract(contract *models.FriendContract) error
+	GetContractByID(contractID int) (*models.FriendContract, error)
+	GetUserContracts(userID int) ([]models.FriendContract, error)
+	UpdateContractStatus(contractID int, status string) error
+	UpdateContract(contract *models.FriendContract) error
+}
+
+// FriendRepoImpl 好友数据库操作实现
+type FriendRepoImpl struct {
 	db *sqlx.DB
 }
 
-// NewFriendRepository 创建好友仓库实例
-func NewFriendRepository(db *sqlx.DB) models.FriendRepository {
-	return &FriendRepository{
-		db: db,
+// 全局变量，用于测试场景
+var friendRepoInstance FriendRepository
+
+// SetFriendRepositoryInstance 设置好友仓库实例，用于测试
+func SetFriendRepositoryInstance(repo FriendRepository) {
+	friendRepoInstance = repo
+}
+
+// NewFriendRepository 创建新的好友仓库
+func NewFriendRepository(db *sqlx.DB) FriendRepository {
+	// 如果已设置了模拟实例，则返回它（用于测试）
+	if friendRepoInstance != nil {
+		return friendRepoInstance
 	}
+	return &FriendRepoImpl{db: db}
 }
 
 // FindByID 根据ID查找好友关系
-func (r *FriendRepository) FindByID(id int) (*models.Friend, error) {
+func (r *FriendRepoImpl) FindByID(id int) (*models.Friend, error) {
 	query := `
 		SELECT f.id, f.user_id, f.friend_id, f.status, f.created_at, f.updated_at,
 		       u.id, u.username, u.email, u.avatar, u.signature, u.study_direction, u.total_study_time
@@ -54,7 +88,7 @@ func (r *FriendRepository) FindByID(id int) (*models.Friend, error) {
 }
 
 // GetFriendList 获取用户的好友列表
-func (r *FriendRepository) GetFriendList(userID int) ([]models.Friend, error) {
+func (r *FriendRepoImpl) GetFriendList(userID int) ([]models.Friend, error) {
 	query := `
 		SELECT f.id, f.user_id, f.friend_id, f.status, f.created_at, f.updated_at,
 		       u.id, u.username, u.email, u.avatar, u.signature, u.study_direction, u.total_study_time
@@ -106,7 +140,7 @@ func (r *FriendRepository) GetFriendList(userID int) ([]models.Friend, error) {
 }
 
 // GetFriendRequests 获取发送给用户的好友请求
-func (r *FriendRepository) GetFriendRequests(userID int) ([]models.Friend, error) {
+func (r *FriendRepoImpl) GetFriendRequests(userID int) ([]models.FriendRequest, error) {
 	query := `
 		SELECT f.id, f.user_id, f.friend_id, f.status, f.created_at, f.updated_at,
 		       u.id, u.username, u.email, u.avatar, u.signature, u.study_direction, u.total_study_time
@@ -121,14 +155,14 @@ func (r *FriendRepository) GetFriendRequests(userID int) ([]models.Friend, error
 	}
 	defer rows.Close()
 	
-	var requests []models.Friend
+	var requests []models.FriendRequest
 	
 	for rows.Next() {
-		request := models.Friend{}
+		request := models.FriendRequest{}
 		requestUser := models.User{}
 		
 		err := rows.Scan(
-			&request.ID, &request.UserID, &request.FriendID, &request.Status, &request.CreatedAt, &request.UpdatedAt,
+			&request.ID, &request.UserID, &request.ReceiverID, &request.Status, &request.CreatedAt, &request.UpdatedAt,
 			&requestUser.ID, &requestUser.Username, &requestUser.Email, &requestUser.Avatar, &requestUser.Signature, 
 			&requestUser.StudyDirection, &requestUser.TotalStudyTime,
 		)
@@ -137,7 +171,7 @@ func (r *FriendRepository) GetFriendRequests(userID int) ([]models.Friend, error
 			return nil, err
 		}
 		
-		request.Friend = &requestUser
+		request.Sender = &requestUser
 		requests = append(requests, request)
 	}
 	
@@ -145,7 +179,7 @@ func (r *FriendRepository) GetFriendRequests(userID int) ([]models.Friend, error
 }
 
 // SendFriendRequest 发送好友请求
-func (r *FriendRepository) SendFriendRequest(userID, friendID int) error {
+func (r *FriendRepoImpl) SendFriendRequest(userID, friendID int) error {
 	// 检查是否已存在请求
 	var count int
 	err := r.db.QueryRowx(
@@ -171,7 +205,7 @@ func (r *FriendRepository) SendFriendRequest(userID, friendID int) error {
 }
 
 // AcceptFriendRequest 接受好友请求
-func (r *FriendRepository) AcceptFriendRequest(requestID, userID int) error {
+func (r *FriendRepoImpl) AcceptFriendRequest(requestID, userID int) error {
 	// 验证请求是否发送给该用户
 	var count int
 	err := r.db.QueryRowx(
@@ -197,7 +231,7 @@ func (r *FriendRepository) AcceptFriendRequest(requestID, userID int) error {
 }
 
 // RejectFriendRequest 拒绝好友请求
-func (r *FriendRepository) RejectFriendRequest(requestID, userID int) error {
+func (r *FriendRepoImpl) RejectFriendRequest(requestID, userID int) error {
 	// 验证请求是否发送给该用户
 	var count int
 	err := r.db.QueryRowx(
@@ -223,7 +257,7 @@ func (r *FriendRepository) RejectFriendRequest(requestID, userID int) error {
 }
 
 // DeleteFriend 删除好友关系
-func (r *FriendRepository) DeleteFriend(userID, friendID int) error {
+func (r *FriendRepoImpl) DeleteFriend(userID, friendID int) error {
 	_, err := r.db.Exec(
 		"DELETE FROM friends WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1)",
 		userID, friendID,
@@ -233,7 +267,7 @@ func (r *FriendRepository) DeleteFriend(userID, friendID int) error {
 }
 
 // IsFriend 检查两个用户是否为好友
-func (r *FriendRepository) IsFriend(userID, friendID int) (bool, error) {
+func (r *FriendRepoImpl) IsFriend(userID, friendID int) (bool, error) {
 	var count int
 	err := r.db.QueryRowx(
 		"SELECT COUNT(*) FROM friends WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1)) AND status = 'accepted'",
@@ -247,8 +281,14 @@ func (r *FriendRepository) IsFriend(userID, friendID int) (bool, error) {
 	return count > 0, nil
 }
 
+// CheckFriendship 检查两个用户之间的好友关系是否存在
+func (r *FriendRepoImpl) CheckFriendship(userID, otherID int) (bool, error) {
+	// 直接复用IsFriend功能
+	return r.IsFriend(userID, otherID)
+}
+
 // SaveMessage 保存消息
-func (r *FriendRepository) SaveMessage(message *models.FriendMessage) error {
+func (r *FriendRepoImpl) SaveMessage(message *models.FriendMessage) error {
 	query := `
 		INSERT INTO friend_messages (sender_id, receiver_id, message_type, content, is_read, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -264,7 +304,7 @@ func (r *FriendRepository) SaveMessage(message *models.FriendMessage) error {
 }
 
 // GetMessage 根据ID获取消息
-func (r *FriendRepository) GetMessage(messageID int) (*models.FriendMessage, error) {
+func (r *FriendRepoImpl) GetMessage(messageID int) (*models.FriendMessage, error) {
 	query := `
 		SELECT id, sender_id, receiver_id, message_type, content, is_read, created_at
 		FROM friend_messages
@@ -288,7 +328,7 @@ func (r *FriendRepository) GetMessage(messageID int) (*models.FriendMessage, err
 }
 
 // MarkMessageAsRead 将消息标记为已读
-func (r *FriendRepository) MarkMessageAsRead(messageID int) error {
+func (r *FriendRepoImpl) MarkMessageAsRead(messageID int) error {
 	_, err := r.db.Exec(
 		"UPDATE friend_messages SET is_read = true WHERE id = $1",
 		messageID,
@@ -298,7 +338,7 @@ func (r *FriendRepository) MarkMessageAsRead(messageID int) error {
 }
 
 // GetChatHistory 获取两个用户之间的聊天记录
-func (r *FriendRepository) GetChatHistory(userID, friendID int, limit, offset int) ([]models.FriendMessage, int, error) {
+func (r *FriendRepoImpl) GetChatHistory(userID, friendID int, limit, offset int) ([]models.FriendMessage, int, error) {
 	// 获取总消息数
 	var total int
 	err := r.db.QueryRowx(
@@ -357,7 +397,7 @@ func (r *FriendRepository) GetChatHistory(userID, friendID int, limit, offset in
 }
 
 // GetUnreadMessageCount 获取用户未读消息数量
-func (r *FriendRepository) GetUnreadMessageCount(userID int) (int, error) {
+func (r *FriendRepoImpl) GetUnreadMessageCount(userID int) (int, error) {
 	var count int
 	err := r.db.QueryRowx(
 		"SELECT COUNT(*) FROM friend_messages WHERE receiver_id = $1 AND is_read = false",
@@ -372,7 +412,7 @@ func (r *FriendRepository) GetUnreadMessageCount(userID int) (int, error) {
 }
 
 // CreateContract 创建好友契约
-func (r *FriendRepository) CreateContract(contract *models.FriendContract) error {
+func (r *FriendRepoImpl) CreateContract(contract *models.FriendContract) error {
 	query := `INSERT INTO friend_contracts 
 		(user_id, friend_id, contract_type, contract_terms, start_date, end_date, goal_type, goal_value, status)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -401,7 +441,7 @@ func (r *FriendRepository) CreateContract(contract *models.FriendContract) error
 }
 
 // GetContractByID 通过ID获取契约
-func (r *FriendRepository) GetContractByID(contractID int) (*models.FriendContract, error) {
+func (r *FriendRepoImpl) GetContractByID(contractID int) (*models.FriendContract, error) {
 	query := `
 		SELECT id, user_id, friend_id, contract_type, contract_terms, start_date, end_date, 
 		       goal_type, goal_value, status, created_at, updated_at
@@ -425,7 +465,7 @@ func (r *FriendRepository) GetContractByID(contractID int) (*models.FriendContra
 }
 
 // GetUserContracts 获取用户所有契约
-func (r *FriendRepository) GetUserContracts(userID int) ([]models.FriendContract, error) {
+func (r *FriendRepoImpl) GetUserContracts(userID int) ([]models.FriendContract, error) {
 	query := `
 		SELECT id, user_id, friend_id, contract_type, contract_terms, start_date, end_date, 
 		       goal_type, goal_value, status, created_at, updated_at
@@ -462,7 +502,7 @@ func (r *FriendRepository) GetUserContracts(userID int) ([]models.FriendContract
 }
 
 // UpdateContractStatus 更新契约状态
-func (r *FriendRepository) UpdateContractStatus(contractID int, status string) error {
+func (r *FriendRepoImpl) UpdateContractStatus(contractID int, status string) error {
 	_, err := r.db.Exec(
 		"UPDATE friend_contracts SET status = $1, updated_at = $2 WHERE id = $3",
 		status, time.Now(), contractID,
@@ -472,7 +512,7 @@ func (r *FriendRepository) UpdateContractStatus(contractID int, status string) e
 }
 
 // UpdateContract 更新契约信息
-func (r *FriendRepository) UpdateContract(contract *models.FriendContract) error {
+func (r *FriendRepoImpl) UpdateContract(contract *models.FriendContract) error {
 	_, err := r.db.Exec(
 		`UPDATE friend_contracts 
 		 SET contract_terms = $1, end_date = $2, goal_type = $3, goal_value = $4, 
@@ -483,4 +523,14 @@ func (r *FriendRepository) UpdateContract(contract *models.FriendContract) error
 	)
 	
 	return err
+}
+
+// RespondToFriendRequest 处理好友请求
+func (r *FriendRepoImpl) RespondToFriendRequest(requestID, userID int, accept bool) error {
+	// 决定使用哪个方法处理请求
+	if accept {
+		return r.AcceptFriendRequest(requestID, userID)
+	} else {
+		return r.RejectFriendRequest(requestID, userID)
+	}
 } 

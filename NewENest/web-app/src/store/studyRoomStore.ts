@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import api from '@/config/api'
+import { studyRoomApi, type StudyRoomDTO, type StudyRoomDetailDTO } from '@/api/studyRoom'
 
 export interface RoomMember {
   id: number
@@ -29,6 +30,42 @@ export interface StudyRoom {
   currentMembers?: number
 }
 
+// 将StudyRoomDTO转换为StudyRoom的辅助函数
+function convertDtoToStudyRoom(dto: StudyRoomDTO): StudyRoom {
+  return {
+    id: dto.id,
+    ownerId: dto.owner?.id || 0,
+    name: dto.name,
+    description: dto.description,
+    shareLink: dto.share_link,
+    maxMembers: dto.max_members,
+    isPrivate: dto.is_private,
+    theme: dto.theme,
+    backgroundImage: dto.background_image,
+    createdAt: dto.created_at,
+    expiresAt: dto.expires_at,
+    currentMembers: dto.member_count
+  }
+}
+
+// 将StudyRoomDetailDTO转换为StudyRoom的辅助函数
+function convertDetailDtoToStudyRoom(dto: StudyRoomDetailDTO): StudyRoom {
+  const room = convertDtoToStudyRoom(dto);
+  if (dto.members) {
+    room.members = dto.members.map(m => ({
+      id: m.user_id,
+      userId: m.user_id,
+      username: m.username || 'Anonymous',
+      avatar: m.avatar,
+      isAnonymous: m.is_anonymous,
+      role: m.role as 'owner' | 'admin' | 'member',
+      status: m.status as 'online' | 'away' | 'offline',
+      joinedAt: m.joined_at
+    }));
+  }
+  return room;
+}
+
 export const useStudyRoomStore = defineStore('studyRoom', () => {
   // 状态
   const rooms = ref<StudyRoom[]>([])
@@ -43,15 +80,17 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function fetchRooms() {
     try {
       loading.value = true
-      const response = await axios.get('/api/v1/study-rooms')
-      // 确保response.data是数组
-      if (Array.isArray(response.data)) {
-        rooms.value = response.data
-      } else if (response.data && Array.isArray(response.data.data)) {
-        // 如果API返回格式是 {data: [...]}
-        rooms.value = response.data.data
+      // 使用studyRoomApi代替axios
+      const response = await studyRoomApi.getStudyRooms()
+      // 处理不同的响应格式
+      if (response && response.rooms) {
+        // 转换DTO为本地格式
+        rooms.value = response.rooms.map(convertDtoToStudyRoom)
+      } else if (Array.isArray(response)) {
+        // 如果直接返回数组，假设它们是StudyRoomDTO[]
+        rooms.value = response.map(convertDtoToStudyRoom)
       } else {
-        console.error('Unexpected API response format:', response.data)
+        console.error('Unexpected API response format:', response)
         rooms.value = [] // 始终确保是数组
       }
     } catch (error) {
@@ -65,17 +104,16 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function fetchRoomById(id: number) {
     try {
       loading.value = true
-      const response = await axios.get(`/api/v1/study-rooms/${id}`)
+      // 使用studyRoomApi代替axios
+      const response = await studyRoomApi.getStudyRoomDetail(id)
       // 确保API返回格式正确
-      if (response.data && response.data.id) {
-        currentRoom.value = response.data
-        return response.data
-      } else if (response.data && response.data.data && response.data.data.id) {
-        // 如果API返回格式是 {data: {...}}
-        currentRoom.value = response.data.data
-        return response.data.data
+      if (response && response.id) {
+        // 转换为本地StudyRoom格式
+        const studyRoom = convertDetailDtoToStudyRoom(response)
+        currentRoom.value = studyRoom
+        return studyRoom
       } else {
-        console.error(`Unexpected API response format for room ${id}:`, response.data)
+        console.error(`Unexpected API response format for room ${id}:`, response)
         return null
       }
     } catch (error) {
@@ -89,12 +127,25 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function createRoom(roomData: Partial<StudyRoom>) {
     try {
       loading.value = true
-      const response = await axios.post('/api/v1/study-rooms', roomData)
-      const newRoom = response.data && response.data.data ? response.data.data : response.data
+      // 转换为CreateStudyRoomDTO格式
+      const createDto = {
+        name: roomData.name || '',
+        description: roomData.description || '',
+        max_members: roomData.maxMembers || 10,
+        is_private: roomData.isPrivate || false,
+        theme: roomData.theme,
+        background_image: roomData.backgroundImage,
+        expires_in: 24 // 默认24小时
+      }
+      
+      // 使用studyRoomApi代替axios
+      const newRoom = await studyRoomApi.createStudyRoom(createDto)
       
       if (newRoom && newRoom.id) {
-        rooms.value.push(newRoom)
-        return { success: true, data: newRoom }
+        // 转换回StudyRoom格式
+        const formattedRoom = convertDtoToStudyRoom(newRoom)
+        rooms.value.push(formattedRoom)
+        return { success: true, data: formattedRoom }
       } else {
         return {
           success: false,
@@ -114,23 +165,34 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function updateRoom(id: number, roomData: Partial<StudyRoom>) {
     try {
       loading.value = true
-      const response = await axios.put(`/api/v1/study-rooms/${id}`, roomData)
+      // 转换为UpdateStudyRoomDTO格式
+      const updateDto = {
+        name: roomData.name,
+        description: roomData.description,
+        max_members: roomData.maxMembers,
+        is_private: roomData.isPrivate,
+        theme: roomData.theme,
+        background_image: roomData.backgroundImage
+      }
       
-      // 提取正确的响应数据
-      const updatedRoom = response.data && response.data.data ? response.data.data : response.data
+      // 使用studyRoomApi代替axios
+      const updatedRoom = await studyRoomApi.updateStudyRoom(id, updateDto)
       
       if (updatedRoom && updatedRoom.id) {
+        // 转换回StudyRoom格式
+        const formattedRoom = convertDtoToStudyRoom(updatedRoom)
+        
         // 更新本地数据
         const index = rooms.value.findIndex(room => room.id === id)
         if (index !== -1) {
-          rooms.value[index] = { ...rooms.value[index], ...updatedRoom }
+          rooms.value[index] = { ...rooms.value[index], ...formattedRoom }
         }
         
         if (currentRoom.value?.id === id) {
-          currentRoom.value = { ...currentRoom.value, ...updatedRoom }
+          currentRoom.value = { ...currentRoom.value, ...formattedRoom }
         }
         
-        return { success: true, data: updatedRoom }
+        return { success: true, data: formattedRoom }
       } else {
         return {
           success: false,
@@ -150,10 +212,8 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function joinRoom(id: number, isAnonymous = false) {
     try {
       loading.value = true
-      const response = await axios.post(`/api/v1/study-rooms/join`, { 
-        room_id: id,
-        is_anonymous: isAnonymous 
-      })
+      // 使用studyRoomApi代替axios
+      await studyRoomApi.joinStudyRoom(id, isAnonymous)
       
       // 更新本地数据
       await fetchRoomById(id)
@@ -172,7 +232,8 @@ export const useStudyRoomStore = defineStore('studyRoom', () => {
   async function leaveRoom(id: number) {
     try {
       loading.value = true
-      await axios.post(`/api/v1/study-rooms/${id}/leave`)
+      // 使用studyRoomApi代替axios
+      await studyRoomApi.leaveStudyRoom(id)
       
       // 更新本地数据
       if (currentRoom.value?.id === id) {

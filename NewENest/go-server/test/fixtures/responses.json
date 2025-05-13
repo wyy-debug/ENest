@@ -1,0 +1,216 @@
+{
+  "auth": {
+    "login": {
+      "success": {
+        "code": 200,
+        "message": "登录成功",
+        "data": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "user": {
+            "id": 1,
+            "username": "test_user",
+            "email": "test@example.com",
+            "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=test_user",
+            "signature": "这是我的个性签名",
+            "study_direction": "计算机科学"
+          }
+        }
+      },
+      "error": {
+        "code": 401,
+        "message": "邮箱或密码错误"
+      }
+    },
+    "register": {
+      "success": {
+        "code": 201,
+        "message": "注册成功",
+        "data": {
+          "username": "new_user",
+          "email": "new_user@example.com"
+        }
+      },
+      "error": {
+        "code": 400,
+        "message": "邮箱已被占用"
+      }
+    }
+  },
+  "friends": {
+    "list": {
+      "success": {
+        "code": 200,
+        "message": "获取好友列表成功",
+        "data": [
+          {
+            "id": 2,
+            "friendshipId": 1,
+            "username": "study_buddy",
+            "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=study_buddy",
+            "signature": "一起学习吧！",
+            "studyDirection": "数学",
+            "onlineStatus": "online",
+            "friendSince": "2025-04-01T00:00:00Z"
+          }
+        ],
+        "total": 1
+      }
+    },
+    "requests": {
+      "success": {
+        "code": 200,
+        "message": "获取好友请求列表成功",
+        "data": [
+          {
+            "id": 1,
+            "user_id": 2,
+            "receiver_id": 1,
+            "created_at": "2025-05-01T00:00:00Z",
+            "status": "pending",
+            "sender": {
+              "id": 2,
+              "username": "study_buddy",
+              "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=study_buddy",
+              "signature": "一起学习吧！",
+              "study_direction": "数学"
+            }
+          }
+        ],
+        "total": 1
+      }
+    },
+    "send": {
+      "success": {
+        "code": 200,
+        "message": "好友请求发送成功"
+      },
+      "error": {
+        "code": 400,
+        "message": "你们已经是好友关系"
+      }
+    },
+    "respond": {
+      "accept": {
+        "code": 200,
+        "message": "已接受好友请求"
+      },
+      "reject": {
+        "code": 200,
+        "message": "已拒绝好友请求"
+      },
+      "error": {
+        "code": 400,
+        "message": "操作类型必须是 accept 或 reject"
+      }
+    }
+  },
+  "studyRooms": {
+    "list": {
+      "success": {
+        "code": 200,
+        "message": "获取自习室列表成功",
+        "data": [
+          {
+            "id": 1,
+            "name": "数学自习室",
+            "description": "一起学习数学",
+            "cover_image": "https://example.com/cover1.jpg",
+            "member_count": 10,
+            "max_members": 20,
+            "focus_time": 25,
+            "break_time": 5,
+            "owner_id": 1,
+            "created_at": "2025-05-01T00:00:00Z",
+            "status": "active",
+            "tags": ["数学", "高中"]
+          },
+          {
+            "id": 2,
+            "name": "英语自习室",
+            "description": "一起学习英语",
+            "cover_image": "https://example.com/cover2.jpg",
+            "member_count": 8,
+            "max_members": 15,
+            "focus_time": 30,
+            "break_time": 10,
+            "owner_id": 2,
+            "created_at": "2025-05-02T00:00:00Z",
+            "status": "active",
+            "tags": ["英语", "大学"]
+          }
+        ],
+        "total": 2
+      }
+    },
+    "detail": {
+      "success": {
+        "code": 200,
+        "message": "获取自习室详情成功",
+        "data": {
+          "id": 1,
+          "name": "数学自习室",
+          "description": "一起学习数学",
+          "cover_image": "https://example.com/cover1.jpg",
+          "member_count": 10,
+          "max_members": 20,
+          "focus_time": 25,
+          "break_time": 5,
+          "owner_id": 1,
+          "owner": {
+            "id": 1,
+            "username": "test_user",
+            "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=test_user"
+          },
+          "created_at": "2025-05-01T00:00:00Z",
+          "status": "active",
+          "tags": ["数学", "高中"],
+          "members": [
+            {
+              "id": 1,
+              "username": "test_user",
+              "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=test_user",
+              "is_owner": true,
+              "joined_at": "2025-05-01T00:00:00Z"
+            },
+            {
+              "id": 2,
+              "username": "study_buddy",
+              "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=study_buddy",
+              "is_owner": false,
+              "joined_at": "2025-05-01T01:00:00Z"
+            }
+          ]
+        }
+      },
+      "error": {
+        "code": 404,
+        "message": "自习室不存在"
+      }
+    },
+    "create": {
+      "success": {
+        "code": 201,
+        "message": "创建自习室成功",
+        "data": {
+          "id": 3,
+          "name": "编程自习室",
+          "share_link": "https://example.com/room/12345"
+        }
+      },
+      "error": {
+        "code": 400,
+        "message": "自习室名称不能为空"
+      }
+    },
+    "join": {
+      "success": {
+        "code": 200,
+        "message": "成功加入自习室"
+      },
+      "error": {
+        "code": 400,
+        "message": "分享链接不能为空"
+      }
+    }
+  }
+} 

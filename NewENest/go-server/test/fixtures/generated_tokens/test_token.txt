@@ -1,0 +1,12 @@
+# 测试用户令牌
+## 测试用户1
+ID: 1
+用户名: test_user
+Email: test@example.com
+令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJleHAiOjE3NDcxMDc1MDEsImlhdCI6MTc0NzAyMTEwMSwiaXNzIjoibmV3ZW5lc3QifQ.aWvUPwpzv6Tz1m_MTDVzbrmu69qxULzMb4yKqT_nkE8
+
+## 测试用户2
+ID: 2
+用户名: study_buddy  
+Email: buddy@example.com
+令牌: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6ImJ1ZGR5QGV4YW1wbGUuY29tIiwiZXhwIjoxNzQ3MTA3NTAxLCJpYXQiOjE3NDcwMjExMDEsImlzcyI6Im5ld2VuZXN0In0.g6vEIuu46hnS70STOUuwvSkwXlCQ1dCmQU2dtbQ8pag

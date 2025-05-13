@@ -10,11 +10,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// DB 数据库连接
-type DB struct {
-	*sqlx.DB
-}
-
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
 	Host     string
@@ -32,7 +27,7 @@ func (c DatabaseConfig) DSN() string {
 }
 
 // ConnectDB 从环境变量加载配置并连接到数据库
-func ConnectDB() (*DB, error) {
+func ConnectDB() (*sqlx.DB, error) {
 	config := DatabaseConfig{
 		Host:     getEnv("DB_HOST", "localhost"),
 		Port:     getEnv("DB_PORT", "5432"),
@@ -41,7 +36,6 @@ func ConnectDB() (*DB, error) {
 		DBName:   getEnv("DB_NAME", "newenest"),
 		SSLMode:  getEnv("DB_SSLMODE", "disable"),
 	}
-	
 	return Connect(config)
 }
 
@@ -55,7 +49,7 @@ func getEnv(key, defaultValue string) string {
 }
 
 // Connect 连接到数据库
-func Connect(cfg DatabaseConfig) (*DB, error) {
+func Connect(cfg DatabaseConfig) (*sqlx.DB, error) {
 	log.Info().Msg("正在连接到数据库...")
 	
 	db, err := sqlx.Connect("postgres", cfg.DSN())
@@ -74,11 +68,11 @@ func Connect(cfg DatabaseConfig) (*DB, error) {
 	
 	log.Info().Msg("数据库连接成功")
 	
-	return &DB{db}, nil
+	return db, nil
 }
 
 // Migrate 应用数据库迁移
-func Migrate(db *DB) error {
+func Migrate(db *sqlx.DB) error {
 	log.Info().Msg("应用数据库迁移...")
 	
 	// 创建表结构

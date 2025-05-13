@@ -21,6 +21,14 @@ func Register(c *fiber.Ctx) error {
 			"message": "请求格式无效",
 		})
 	}
+	
+	// 验证必填字段
+	if registerData.Username == "" || registerData.Email == "" || registerData.Password == "" {
+		return c.Status(400).JSON(fiber.Map{
+			"code":    400,
+			"message": "用户名、邮箱和密码不能为空",
+		})
+	}
 
 	// 检查邮箱是否已被使用
 	if registerData.Email == "test@example.com" || registerData.Email == "buddy@example.com" || registerData.Email == "focus@example.com" {

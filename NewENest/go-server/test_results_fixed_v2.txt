@@ -1,0 +1,3 @@
+FAIL	NewENest/go-server/test [setup failed]
+?   	NewENest/go-server/test/tools	[no test files]
+FAIL

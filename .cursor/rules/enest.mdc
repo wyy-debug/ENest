@@ -1,0 +1,139 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ {
+  "$schema": "https://cursor.sh/schema",
+  "tasks": {
+    "frontend:dev": {
+      "command": "cd web-app && npm run dev",
+      "description": "启动Vue前端开发服务器",
+      "keybind": "ctrl+shift+f"
+    },
+    "backend:dev": {
+      "command": "cd go-server && go run main.go",
+      "description": "启动Go后端服务器",
+      "keybind": "ctrl+shift+b"
+    },
+    "frontend:build": {
+      "command": "cd web-app && npm run build",
+      "description": "构建Vue前端应用"
+    },
+    "backend:build": {
+      "command": "cd go-server && go build -o app main.go",
+      "description": "构建Go后端应用"
+    },
+    "docker:up": {
+      "command": "docker-compose up -d",
+      "description": "启动Docker开发环境",
+      "keybind": "ctrl+shift+d"
+    },
+    "docker:down": {
+      "command": "docker-compose down",
+      "description": "关闭Docker开发环境"
+    },
+    "lint:frontend": {
+      "command": "cd web-app && npm run lint",
+      "description": "检查前端代码风格"
+    },
+    "lint:backend": {
+      "command": "cd go-server && go fmt ./...",
+      "description": "格式化后端代码"
+    }
+  },
+  "templates": {
+    "vue": {
+      "path": "web-app/src/**/*.vue",
+      "commands": {
+        "format": "cd web-app && npm run lint:fix"
+      }
+    },
+    "go": {
+      "path": "go-server/**/*.go",
+      "commands": {
+        "format": "go fmt"
+      }
+    },
+    "ts": {
+      "path": "web-app/src/**/*.ts",
+      "commands": {
+        "format": "cd web-app && npm run lint:fix"
+      }
+    }
+  },
+  "scripts": {
+    "postCreate": [
+      "npm install -g typescript",
+      "npm install -g @vue/cli"
+    ]
+  },
+  "codingRules": {
+    "frontend": {
+      "fileNaming": "kebab-case 例如: user-profile.vue",
+      "componentNaming": "PascalCase 例如: UserProfile.vue",
+      "variableNaming": "camelCase 例如: getUserProfile",
+      "constants": "UPPER_SNAKE_CASE 例如: API_BASE_URL",
+      "typeNaming": "PascalCase 例如: UserProfileDto"
+    },
+    "backend": {
+      "fileNaming": "snake_case 例如: user_repository.go",
+      "packageNaming": "小写单词 例如: models",
+      "structureNaming": "PascalCase 例如: UserProfile",
+      "functionNaming": "PascalCase或camelCase，取决于可见性",
+      "constNaming": "PascalCase或UPPER_SNAKE_CASE，取决于可见性"
+    },
+    "gitCommit": {
+      "format": "<类型>(<可选作用域>): <描述>",
+      "types": [
+        "feat: 新功能",
+        "fix: Bug修复",
+        "docs: 文档更新",
+        "style: 代码风格调整",
+        "refactor: 代码重构",
+        "perf: 性能优化",
+        "test: 添加或更新测试",
+        "build: 构建系统更新",
+        "ci: CI/CD流程相关变更",
+        "chore: 琐碎更新"
+      ]
+    }
+  },
+  "apiFormat": {
+    "successResponse": {
+      "code": 200,
+      "message": "success",
+      "data": "数据对象"
+    },
+    "errorResponse": {
+      "code": "错误码",
+      "message": "错误信息",
+      "errors": "错误详情"
+    }
+  },
+  "directoryStructure": {
+    "frontend": {
+      "api": "API请求封装",
+      "assets": "静态资源",
+      "components": "通用组件",
+      "composables": "可复用逻辑",
+      "config": "配置文件",
+      "layouts": "布局组件",
+      "router": "路由配置",
+      "store": "状态管理",
+      "styles": "全局样式",
+      "utils": "工具函数",
+      "views": "页面组件"
+    },
+    "backend": {
+      "api": "API路由和控制器",
+      "database": "数据库连接和迁移",
+      "dto": "数据传输对象",
+      "middleware": "中间件",
+      "models": "数据模型",
+      "repositories": "数据库操作封装",
+      "services": "业务逻辑",
+      "websocket": "WebSocket服务"
+    }
+  }
+}

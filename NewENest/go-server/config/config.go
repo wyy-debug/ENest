@@ -33,13 +33,13 @@ type ServerConfig struct {
 	Environment string `default:"development"`
 }
 
-// DatabaseConfig 数据库配置
+// DatabaseConfig 数据库配置结构
 type DatabaseConfig struct {
 	// 主机地址
 	Host string `default:"localhost"`
 	
 	// 端口
-	Port int `default:"5432"`
+	Port string `default:"5432"`
 	
 	// 用户名
 	Username string `required:"true"`
@@ -57,12 +57,33 @@ type DatabaseConfig struct {
 	ConnectionString string `ignored:"true"`
 }
 
-// DSN 获取数据库连接字符串
+// DSN 返回数据库连接字符串
 func (c *DatabaseConfig) DSN() string {
 	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.Username, c.Password, c.Database, c.SSLMode,
 	)
+}
+
+// GetDatabaseConfig 从环境变量获取数据库配置
+func GetDatabaseConfig() *DatabaseConfig {
+	return &DatabaseConfig{
+		Host:     getEnv("DB_HOST", "localhost"),
+		Port:     getEnv("DB_PORT", "5432"),
+		Username: getEnv("DB_USER", "postgres"),
+		Password: getEnv("DB_PASSWORD", "postgres"),
+		Database: getEnv("DB_NAME", "enest"),
+		SSLMode:  getEnv("DB_SSLMODE", "disable"),
+	}
+}
+
+// getEnv 获取环境变量，如果不存在则返回默认值
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
 
 // CORSConfig CORS配置

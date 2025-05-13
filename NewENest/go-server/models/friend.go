@@ -15,6 +15,17 @@ type Friend struct {
 	Friend    *User     `json:"friend,omitempty" db:"-"` // 关联的好友用户信息
 }
 
+// FriendRequest 好友请求模型
+type FriendRequest struct {
+	ID         int       `json:"id" db:"id"`
+	UserID     int       `json:"user_id" db:"user_id"`     // 发送者ID
+	ReceiverID int       `json:"receiver_id" db:"receiver_id"` // 接收者ID
+	Status     string    `json:"status" db:"status"`      // pending, accepted, rejected
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+	Sender     *User     `json:"sender,omitempty" db:"-"`    // 发送者信息
+}
+
 // FriendContract 好友契约模型
 type FriendContract struct {
 	ID             int       `json:"id" db:"id"`
@@ -50,7 +61,7 @@ type FriendRepository interface {
 	// 好友关系管理
 	FindByID(id int) (*Friend, error)
 	GetFriendList(userID int) ([]Friend, error)
-	GetFriendRequests(userID int) ([]Friend, error)
+	GetFriendRequests(userID int) ([]FriendRequest, error)
 	SendFriendRequest(userID, friendID int) error
 	AcceptFriendRequest(requestID, userID int) error
 	RejectFriendRequest(requestID, userID int) error

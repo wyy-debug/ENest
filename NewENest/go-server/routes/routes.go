@@ -24,6 +24,9 @@ func SetupRoutes(app *fiber.App, db *sqlx.DB) {
 		AllowCredentials: true,
 	}))
 
+	// 设置数据库连接
+	handlers.SetDB(db)
+
 	// 初始化存储库
 	friendRepo := database.NewFriendRepository(db)
 
@@ -55,6 +58,8 @@ func SetupRoutes(app *fiber.App, db *sqlx.DB) {
 
 	// 自习室受保护路由
 	protected.Post("/study-rooms", handlers.CreateStudyRoom)
+	protected.Put("/study-rooms/:id", handlers.UpdateStudyRoom)
+	protected.Post("/study-rooms/:id/leave", handlers.LeaveStudyRoom)
 
 	// 任务相关路由
 	tasks := protected.Group("/tasks")
